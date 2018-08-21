@@ -8,6 +8,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+// CustomHostnameSSLSettings represents the SSL settings for a custom hostname.
+type CustomHostnameSSLSettings struct {
+	HTTP2         string   `json:"http2,omitempty"`
+	TLS13         string   `json:"tls_1_3,omitempty"`
+	MinTLSVersion string   `json:"min_tls_version,omitempty"`
+	Ciphers       []string `json:"ciphers,omitempty"`
+}
+
 // CustomHostnameSSL represents the SSL section in a given custom hostname.
 type CustomHostnameSSL struct {
 	Status      string `json:"status,omitempty"`
@@ -15,6 +23,7 @@ type CustomHostnameSSL struct {
 	Type        string `json:"type,omitempty"`
 	CnameTarget string `json:"cname_target,omitempty"`
 	CnameName   string `json:"cname_name,omitempty"`
+	Settings    CustomHostnameSSLSettings `json:"settings,omitempty"`
 
 	// HttpURL is the url at which http validation will issue requests.
 	HttpURL string `json:"http_url,omitempty"`
