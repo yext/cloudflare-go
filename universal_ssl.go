@@ -21,19 +21,13 @@ type universalSSLSettingResponse struct {
 
 // UniversalSSLVerificationDetails represents a universal ssl verification's properties.
 type UniversalSSLVerificationDetails struct {
-	CertificateStatus  string                       `json:"certificate_status"`
-	VerificationType   string                       `json:"verification_type"`
-	ValidationMethod   string                       `json:"validation_method"`
-	CertPackUUID       string                       `json:"cert_pack_uuid"`
-	VerificationStatus bool                         `json:"verification_status"`
-	BrandCheck         bool                         `json:"brand_check"`
-	VerificationInfo   UniversalSSLVerificationInfo `json:"verification_info"`
-}
-
-// UniversalSSLVerificationInfo represents DCV record.
-type UniversalSSLVerificationInfo struct {
-	RecordName   string `json:"record_name"`
-	RecordTarget string `json:"record_target"`
+	CertificateStatus  string                `json:"certificate_status"`
+	VerificationType   string                `json:"verification_type"`
+	ValidationMethod   string                `json:"validation_method"`
+	CertPackUUID       string                `json:"cert_pack_uuid"`
+	VerificationStatus bool                  `json:"verification_status"`
+	BrandCheck         bool                  `json:"brand_check"`
+	VerificationInfo   []SSLValidationRecord `json:"verification_info"`
 }
 
 type universalSSLVerificationResponse struct {
@@ -80,7 +74,6 @@ func (api *API) EditUniversalSSLSetting(ctx context.Context, zoneID string, sett
 		return UniversalSSLSetting{}, errors.Wrap(err, errUnmarshalError)
 	}
 	return r.Result, nil
-
 }
 
 // UniversalSSLVerificationDetails returns the details for a universal ssl verification

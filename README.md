@@ -28,30 +28,31 @@ The current feature list includes:
 * [x] Cache purging
 * [x] Cloudflare IPs
 * [x] Custom hostnames
+* [x] DNS Firewall
 * [x] DNS Records
 * [x] Firewall (partial)
+* [x] Gateway Locations
 * [x] [Keyless SSL](https://blog.cloudflare.com/keyless-ssl-the-nitty-gritty-technical-details/)
 * [x] [Load Balancing](https://blog.cloudflare.com/introducing-load-balancing-intelligent-failover-with-cloudflare/)
 * [x] [Logpush Jobs](https://developers.cloudflare.com/logs/logpush/)
+* [x] Magic Transit / Magic WAN
+* [x] Notifications
 * [ ] Organization Administration
 * [x] [Origin CA](https://blog.cloudflare.com/universal-ssl-encryption-all-the-way-to-the-origin-for-free/)
 * [x] [Railgun](https://www.cloudflare.com/railgun/) administration
 * [x] Rate Limiting
 * [x] User Administration (partial)
-* [x] Virtual DNS Management
 * [x] Web Application Firewall (WAF)
+* [x] Workers KV
 * [x] Zone Lockdown and User-Agent Block rules
 * [x] Zones
-* [x] Workers KV
-* [x] Notifications
-* [x] Gateway Locations
 
 Pull Requests are welcome, but please open an issue (or comment in an existing
 issue) to discuss any non-trivial changes before submitting code.
 
 ## Installation
 
-You need a working Go environment.
+You need a working Go environment. We officially support only currently supported Go versions according to [Go project's release policy](https://go.dev/doc/devel/release#policy).
 
 ```
 go get github.com/cloudflare/cloudflare-go
@@ -72,8 +73,10 @@ import (
 )
 
 func main() {
-	// Construct a new API object
+	// Construct a new API object using a global API key
 	api, err := cloudflare.New(os.Getenv("CLOUDFLARE_API_KEY"), os.Getenv("CLOUDFLARE_API_EMAIL"))
+	// alternatively, you can use a scoped API token
+	// api, err := cloudflare.NewWithAPIToken(os.Getenv("CLOUDFLARE_API_TOKEN"))
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -10,14 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func float64Ptr(v float64) *float64 {
-	return &v
-}
-
-func int64Ptr(v int64) *int64 {
-	return &v
-}
-
 func TestVirtualDNSUserAnalytics(t *testing.T) {
 	setup()
 	defer teardown()
@@ -53,7 +45,7 @@ func TestVirtualDNSUserAnalytics(t *testing.T) {
 		}`)
 	}
 
-	mux.HandleFunc("/user/virtual_dns/12345/dns_analytics/report", handler)
+	mux.HandleFunc("/user/dns_firewall/12345/dns_analytics/report", handler)
 	want := VirtualDNSAnalytics{
 		Totals: VirtualDNSAnalyticsMetrics{
 			QueryCount:         int64Ptr(5),
