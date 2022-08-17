@@ -11,7 +11,7 @@ import (
 )
 
 func TestListMagicTransitStaticRoutes(t *testing.T) {
-	setup(UsingAccount("foo"))
+	setup()
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +46,7 @@ func TestListMagicTransitStaticRoutes(t *testing.T) {
     }`)
 	}
 
-	mux.HandleFunc("/accounts/foo/magic/routes", handler)
+	mux.HandleFunc("/accounts/"+testAccountID+"/magic/routes", handler)
 
 	createdOn, _ := time.Parse(time.RFC3339, "2017-06-14T00:00:00Z")
 	modifiedOn, _ := time.Parse(time.RFC3339, "2017-06-14T05:20:00Z")
@@ -72,14 +72,14 @@ func TestListMagicTransitStaticRoutes(t *testing.T) {
 		},
 	}
 
-	actual, err := client.ListMagicTransitStaticRoutes(context.Background())
+	actual, err := client.ListMagicTransitStaticRoutes(context.Background(), testAccountID)
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
 }
 
 func TestGetMagicTransitStaticRoute(t *testing.T) {
-	setup(UsingAccount("foo"))
+	setup()
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +112,7 @@ func TestGetMagicTransitStaticRoute(t *testing.T) {
     }`)
 	}
 
-	mux.HandleFunc("/accounts/foo/magic/routes/c4a7362d577a6c3019a474fd6f485821", handler)
+	mux.HandleFunc("/accounts/"+testAccountID+"/magic/routes/c4a7362d577a6c3019a474fd6f485821", handler)
 
 	createdOn, _ := time.Parse(time.RFC3339, "2017-06-14T00:00:00Z")
 	modifiedOn, _ := time.Parse(time.RFC3339, "2017-06-14T05:20:00Z")
@@ -136,14 +136,14 @@ func TestGetMagicTransitStaticRoute(t *testing.T) {
 		},
 	}
 
-	actual, err := client.GetMagicTransitStaticRoute(context.Background(), "c4a7362d577a6c3019a474fd6f485821")
+	actual, err := client.GetMagicTransitStaticRoute(context.Background(), testAccountID, "c4a7362d577a6c3019a474fd6f485821")
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
 }
 
 func TestCreateMagicTransitStaticRoutes(t *testing.T) {
-	setup(UsingAccount("foo"))
+	setup()
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -178,7 +178,7 @@ func TestCreateMagicTransitStaticRoutes(t *testing.T) {
     }`)
 	}
 
-	mux.HandleFunc("/accounts/foo/magic/routes", handler)
+	mux.HandleFunc("/accounts/"+testAccountID+"/magic/routes", handler)
 
 	createdOn, _ := time.Parse(time.RFC3339, "2017-06-14T00:00:00Z")
 	modifiedOn, _ := time.Parse(time.RFC3339, "2017-06-14T05:20:00Z")
@@ -202,7 +202,7 @@ func TestCreateMagicTransitStaticRoutes(t *testing.T) {
 		},
 	}
 
-	actual, err := client.CreateMagicTransitStaticRoute(context.Background(), want)
+	actual, err := client.CreateMagicTransitStaticRoute(context.Background(), testAccountID, want)
 	if assert.NoError(t, err) {
 		assert.Equal(t, []MagicTransitStaticRoute{
 			want,
@@ -211,7 +211,7 @@ func TestCreateMagicTransitStaticRoutes(t *testing.T) {
 }
 
 func TestUpdateMagicTransitStaticRoute(t *testing.T) {
-	setup(UsingAccount("foo"))
+	setup()
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -245,7 +245,7 @@ func TestUpdateMagicTransitStaticRoute(t *testing.T) {
     }`)
 	}
 
-	mux.HandleFunc("/accounts/foo/magic/routes/c4a7362d577a6c3019a474fd6f485821", handler)
+	mux.HandleFunc("/accounts/"+testAccountID+"/magic/routes/c4a7362d577a6c3019a474fd6f485821", handler)
 
 	createdOn, _ := time.Parse(time.RFC3339, "2017-06-14T00:00:00Z")
 	modifiedOn, _ := time.Parse(time.RFC3339, "2017-06-14T05:20:00Z")
@@ -269,14 +269,14 @@ func TestUpdateMagicTransitStaticRoute(t *testing.T) {
 		},
 	}
 
-	actual, err := client.UpdateMagicTransitStaticRoute(context.Background(), "c4a7362d577a6c3019a474fd6f485821", want)
+	actual, err := client.UpdateMagicTransitStaticRoute(context.Background(), testAccountID, "c4a7362d577a6c3019a474fd6f485821", want)
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
 }
 
 func TestDeleteMagicTransitStaticRoute(t *testing.T) {
-	setup(UsingAccount("foo"))
+	setup()
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -310,7 +310,7 @@ func TestDeleteMagicTransitStaticRoute(t *testing.T) {
     }`)
 	}
 
-	mux.HandleFunc("/accounts/foo/magic/routes/c4a7362d577a6c3019a474fd6f485821", handler)
+	mux.HandleFunc("/accounts/"+testAccountID+"/magic/routes/c4a7362d577a6c3019a474fd6f485821", handler)
 
 	createdOn, _ := time.Parse(time.RFC3339, "2017-06-14T00:00:00Z")
 	modifiedOn, _ := time.Parse(time.RFC3339, "2017-06-14T05:20:00Z")
@@ -334,7 +334,7 @@ func TestDeleteMagicTransitStaticRoute(t *testing.T) {
 		},
 	}
 
-	actual, err := client.DeleteMagicTransitStaticRoute(context.Background(), "c4a7362d577a6c3019a474fd6f485821")
+	actual, err := client.DeleteMagicTransitStaticRoute(context.Background(), testAccountID, "c4a7362d577a6c3019a474fd6f485821")
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}

@@ -40,7 +40,7 @@ func TestCreateLoadBalancerPool(t *testing.T) {
               "origins": [
                 {
                   "name": "app-server-1",
-                  "address": "0.0.0.0",
+                  "address": "198.51.100.1",
                   "enabled": true,
                   "weight": 1,
                   "header": {
@@ -83,7 +83,7 @@ func TestCreateLoadBalancerPool(t *testing.T) {
               "origins": [
                 {
                   "name": "app-server-1",
-                  "address": "0.0.0.0",
+                  "address": "198.51.100.1",
                   "enabled": true,
                   "weight": 1,
                   "header": {
@@ -131,7 +131,7 @@ func TestCreateLoadBalancerPool(t *testing.T) {
 		Origins: []LoadBalancerOrigin{
 			{
 				Name:    "app-server-1",
-				Address: "0.0.0.0",
+				Address: "198.51.100.1",
 				Enabled: true,
 				Weight:  1,
 				Header: map[string][]string{
@@ -163,7 +163,7 @@ func TestCreateLoadBalancerPool(t *testing.T) {
 		Origins: []LoadBalancerOrigin{
 			{
 				Name:    "app-server-1",
-				Address: "0.0.0.0",
+				Address: "198.51.100.1",
 				Enabled: true,
 				Weight:  1,
 				Header: map[string][]string{
@@ -209,7 +209,7 @@ func TestListLoadBalancerPools(t *testing.T) {
                     "origins": [
                       {
                         "name": "app-server-1",
-                        "address": "0.0.0.0",
+                        "address": "198.51.100.1",
                         "enabled": true,
                         "weight": 1
                       }
@@ -244,7 +244,7 @@ func TestListLoadBalancerPools(t *testing.T) {
 			Origins: []LoadBalancerOrigin{
 				{
 					Name:    "app-server-1",
-					Address: "0.0.0.0",
+					Address: "198.51.100.1",
 					Enabled: true,
 					Weight:  1,
 				},
@@ -284,7 +284,7 @@ func TestLoadBalancerPoolDetails(t *testing.T) {
               "origins": [
                 {
                   "name": "app-server-1",
-                  "address": "0.0.0.0",
+                  "address": "198.51.100.1",
                   "enabled": true,
                   "weight": 1
                 }
@@ -311,7 +311,7 @@ func TestLoadBalancerPoolDetails(t *testing.T) {
 		Origins: []LoadBalancerOrigin{
 			{
 				Name:    "app-server-1",
-				Address: "0.0.0.0",
+				Address: "198.51.100.1",
 				Enabled: true,
 				Weight:  1,
 			},
@@ -371,7 +371,7 @@ func TestModifyLoadBalancerPool(t *testing.T) {
               "origins": [
                 {
                   "name": "app-server-2",
-                  "address": "0.0.0.1",
+                  "address": "198.51.100.2",
                   "enabled": false,
                   "weight": 1,
                   "header": {
@@ -404,7 +404,7 @@ func TestModifyLoadBalancerPool(t *testing.T) {
               "origins": [
                 {
                   "name": "app-server-2",
-                  "address": "0.0.0.1",
+                  "address": "198.51.100.2",
                   "enabled": false,
                   "weight": 1,
                   "header": {
@@ -438,7 +438,7 @@ func TestModifyLoadBalancerPool(t *testing.T) {
 		Origins: []LoadBalancerOrigin{
 			{
 				Name:    "app-server-2",
-				Address: "0.0.0.1",
+				Address: "198.51.100.2",
 				Enabled: false,
 				Weight:  1,
 				Header: map[string][]string{
@@ -462,7 +462,7 @@ func TestModifyLoadBalancerPool(t *testing.T) {
 		Origins: []LoadBalancerOrigin{
 			{
 				Name:    "app-server-2",
-				Address: "0.0.0.1",
+				Address: "198.51.100.2",
 				Enabled: false,
 				Weight:  1,
 				Header: map[string][]string{
@@ -931,6 +931,13 @@ func TestCreateLoadBalancer(t *testing.T) {
                   "00920f38ce07c2e2f4df50b1f61d4194"
                 ]
 			  },
+			  "random_steering": {
+			    "default_weight": 0.2,
+			    "pool_weights": {
+			        "9290f38c5d07c2e2f4df57b1f61d4196": 0.6,
+			        "de90f38ced07c2e2f4df50b1f61d4194": 0.4
+			    }
+			  },
 			  "rules": [
 				  {
 					  "name": "example rule",
@@ -950,7 +957,8 @@ func TestCreateLoadBalancer(t *testing.T) {
               "session_affinity_attributes": {
                 "samesite": "Strict",
                 "secure": "Always",
-                "drain_duration": 60
+                "drain_duration": 60,
+                "zero_downtime_failover": "sticky"
               }
             }`, string(b))
 		}
@@ -1001,6 +1009,13 @@ func TestCreateLoadBalancer(t *testing.T) {
                     "00920f38ce07c2e2f4df50b1f61d4194"
                   ]
 				},
+				"random_steering": {
+				   "default_weight": 0.2,
+				    "pool_weights": {
+				        "9290f38c5d07c2e2f4df57b1f61d4196": 0.6,
+				        "de90f38ced07c2e2f4df50b1f61d4194": 0.4
+				    }
+				},
 				"rules": [
 				  {
 					  "name": "example rule",
@@ -1018,7 +1033,8 @@ func TestCreateLoadBalancer(t *testing.T) {
                 "session_affinity_attributes": {
                     "samesite": "Strict",
                     "secure": "Always",
-                    "drain_duration": 60
+                    "drain_duration": 60,
+	                "zero_downtime_failover": "sticky"
                 }
             }
         }`)
@@ -1070,6 +1086,13 @@ func TestCreateLoadBalancer(t *testing.T) {
 				"00920f38ce07c2e2f4df50b1f61d4194",
 			},
 		},
+		RandomSteering: &RandomSteering{
+			DefaultWeight: 0.2,
+			PoolWeights: map[string]float64{
+				"9290f38c5d07c2e2f4df57b1f61d4196": 0.6,
+				"de90f38ced07c2e2f4df50b1f61d4194": 0.4,
+			},
+		},
 		Rules: []*LoadBalancerRule{
 			{
 				Name:      "example rule",
@@ -1085,9 +1108,10 @@ func TestCreateLoadBalancer(t *testing.T) {
 		Persistence:    "cookie",
 		PersistenceTTL: 5000,
 		SessionAffinityAttributes: &SessionAffinityAttributes{
-			SameSite:      "Strict",
-			Secure:        "Always",
-			DrainDuration: 60,
+			SameSite:             "Strict",
+			Secure:               "Always",
+			DrainDuration:        60,
+			ZeroDowntimeFailover: "sticky",
 		},
 	}
 	request := LoadBalancer{
@@ -1130,6 +1154,13 @@ func TestCreateLoadBalancer(t *testing.T) {
 				"00920f38ce07c2e2f4df50b1f61d4194",
 			},
 		},
+		RandomSteering: &RandomSteering{
+			DefaultWeight: 0.2,
+			PoolWeights: map[string]float64{
+				"9290f38c5d07c2e2f4df57b1f61d4196": 0.6,
+				"de90f38ced07c2e2f4df50b1f61d4194": 0.4,
+			},
+		},
 		Rules: []*LoadBalancerRule{
 			{
 				Name:      "example rule",
@@ -1145,9 +1176,10 @@ func TestCreateLoadBalancer(t *testing.T) {
 		Persistence:    "cookie",
 		PersistenceTTL: 5000,
 		SessionAffinityAttributes: &SessionAffinityAttributes{
-			SameSite:      "Strict",
-			Secure:        "Always",
-			DrainDuration: 60,
+			SameSite:             "Strict",
+			Secure:               "Always",
+			DrainDuration:        60,
+			ZeroDowntimeFailover: "sticky",
 		},
 	}
 
@@ -1212,6 +1244,13 @@ func TestListLoadBalancers(t *testing.T) {
                         "00920f38ce07c2e2f4df50b1f61d4194"
                       ]
                     },
+                    "random_steering": {
+                        "default_weight": 0.2,
+                        "pool_weights": {
+                            "9290f38c5d07c2e2f4df57b1f61d4196": 0.6,
+                            "de90f38ced07c2e2f4df50b1f61d4194": 0.4
+                        }
+                    },
                     "proxied": true
                 }
             ],
@@ -1269,6 +1308,13 @@ func TestListLoadBalancers(t *testing.T) {
 				},
 				"SJC": {
 					"00920f38ce07c2e2f4df50b1f61d4194",
+				},
+			},
+			RandomSteering: &RandomSteering{
+				DefaultWeight: 0.2,
+				PoolWeights: map[string]float64{
+					"9290f38c5d07c2e2f4df57b1f61d4196": 0.6,
+					"de90f38ced07c2e2f4df50b1f61d4194": 0.4,
 				},
 			},
 			Proxied: true,
@@ -1335,6 +1381,13 @@ func TestLoadBalancerDetails(t *testing.T) {
                     "00920f38ce07c2e2f4df50b1f61d4194"
                   ]
                 },
+                "random_steering": {
+                    "default_weight": 0.2,
+                    "pool_weights": {
+                        "9290f38c5d07c2e2f4df57b1f61d4196": 0.6,
+                        "de90f38ced07c2e2f4df50b1f61d4194": 0.4
+                    }
+                },
                 "proxied": true
             }
         }`)
@@ -1384,6 +1437,13 @@ func TestLoadBalancerDetails(t *testing.T) {
 			},
 			"SJC": {
 				"00920f38ce07c2e2f4df50b1f61d4194",
+			},
+		},
+		RandomSteering: &RandomSteering{
+			DefaultWeight: 0.2,
+			PoolWeights: map[string]float64{
+				"9290f38c5d07c2e2f4df57b1f61d4196": 0.6,
+				"de90f38ced07c2e2f4df50b1f61d4194": 0.4,
 			},
 		},
 		Proxied: true,
@@ -1466,11 +1526,18 @@ func TestModifyLoadBalancer(t *testing.T) {
                     "00920f38ce07c2e2f4df50b1f61d4194"
                   ]
                 },
+                "random_steering": {
+                    "default_weight": 0.5,
+                    "pool_weights": {
+                        "9290f38c5d07c2e2f4df57b1f61d4196": 0.2
+                    }
+                },
                 "proxied": true,
                 "session_affinity": "none",
                 "session_affinity_attributes": {
                   "samesite": "Strict",
-                  "secure": "Always"
+                  "secure": "Always",
+				  "zero_downtime_failover": "sticky"
                 }
 			}`, string(b))
 		}
@@ -1516,11 +1583,18 @@ func TestModifyLoadBalancer(t *testing.T) {
                     "00920f38ce07c2e2f4df50b1f61d4194"
                   ]
                 },
+                "random_steering": {
+                    "default_weight": 0.5,
+                    "pool_weights": {
+                        "9290f38c5d07c2e2f4df57b1f61d4196": 0.2
+                    }
+                },
                 "proxied": true,
                 "session_affinity": "none",
                 "session_affinity_attributes": {
                   "samesite": "Strict",
-                  "secure": "Always"
+                  "secure": "Always",
+	              "zero_downtime_failover": "sticky"
                 }
             }
         }`)
@@ -1567,11 +1641,18 @@ func TestModifyLoadBalancer(t *testing.T) {
 				"00920f38ce07c2e2f4df50b1f61d4194",
 			},
 		},
+		RandomSteering: &RandomSteering{
+			DefaultWeight: 0.5,
+			PoolWeights: map[string]float64{
+				"9290f38c5d07c2e2f4df57b1f61d4196": 0.2,
+			},
+		},
 		Proxied:     true,
 		Persistence: "none",
 		SessionAffinityAttributes: &SessionAffinityAttributes{
-			SameSite: "Strict",
-			Secure:   "Always",
+			SameSite:             "Strict",
+			Secure:               "Always",
+			ZeroDowntimeFailover: "sticky",
 		},
 	}
 	request := LoadBalancer{
@@ -1610,11 +1691,18 @@ func TestModifyLoadBalancer(t *testing.T) {
 				"00920f38ce07c2e2f4df50b1f61d4194",
 			},
 		},
+		RandomSteering: &RandomSteering{
+			DefaultWeight: 0.5,
+			PoolWeights: map[string]float64{
+				"9290f38c5d07c2e2f4df57b1f61d4196": 0.2,
+			},
+		},
 		Proxied:     true,
 		Persistence: "none",
 		SessionAffinityAttributes: &SessionAffinityAttributes{
-			SameSite: "Strict",
-			Secure:   "Always",
+			SameSite:             "Strict",
+			Secure:               "Always",
+			ZeroDowntimeFailover: "sticky",
 		},
 	}
 

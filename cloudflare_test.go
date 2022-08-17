@@ -2,6 +2,7 @@ package cloudflare
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -121,7 +122,10 @@ func TestClient_RetryCanSucceedAfterErrors(t *testing.T) {
 	requestsReceived := 0
 	// could test any function, using ListLoadBalancerPools
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodGet, r.Method, "Expected method 'GET', got %s", r.Method)
+		assert.Equal(t, http.MethodPost, r.Method, "Expected method 'POST', got %s", r.Method)
+		actual := LoadBalancerPool{}
+		assert.NoError(t, json.NewDecoder(r.Body).Decode(&actual))
+		assert.Equal(t, "123", actual.ID)
 		w.Header().Set("content-type", "application/json")
 
 		// we are doing three *retries*
@@ -149,7 +153,7 @@ func TestClient_RetryCanSucceedAfterErrors(t *testing.T) {
             "success": true,
             "errors": [],
             "messages": [],
-            "result": [
+            "result":
                 {
                     "id": "17b5962d775c646f3f9725cbc7a53df4",
                     "created_on": "2014-01-01T05:20:00.12345Z",
@@ -161,13 +165,12 @@ func TestClient_RetryCanSucceedAfterErrors(t *testing.T) {
                     "origins": [
                       {
                         "name": "app-server-1",
-                        "address": "0.0.0.0",
+                        "address": "198.51.100.1",
                         "enabled": true
                       }
                     ],
                     "notification_email": "someone@example.com"
-                }
-            ],
+                },
             "result_info": {
                 "page": 1,
                 "per_page": 20,
@@ -181,7 +184,7 @@ func TestClient_RetryCanSucceedAfterErrors(t *testing.T) {
 
 	mux.HandleFunc("/user/load_balancers/pools", handler)
 
-	_, err := client.ListLoadBalancerPools(context.Background())
+	_, err := client.CreateLoadBalancerPool(context.Background(), LoadBalancerPool{ID: "123"})
 	assert.NoError(t, err)
 }
 

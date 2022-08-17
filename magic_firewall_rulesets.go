@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pkg/errors"
+	"errors"
 )
 
 const (
@@ -99,12 +99,10 @@ type UpdateMagicFirewallRulesetResponse struct {
 // ListMagicFirewallRulesets lists all Rulesets for a given account
 //
 // API reference: https://api.cloudflare.com/#rulesets-list-rulesets
-func (api *API) ListMagicFirewallRulesets(ctx context.Context) ([]MagicFirewallRuleset, error) {
-	if err := api.checkAccountID(); err != nil {
-		return []MagicFirewallRuleset{}, err
-	}
-
-	uri := fmt.Sprintf("/accounts/%s/rulesets", api.AccountID)
+//
+// Deprecated: Use `ListZoneRuleset` or `ListAccountRuleset` instead.
+func (api *API) ListMagicFirewallRulesets(ctx context.Context, accountID string) ([]MagicFirewallRuleset, error) {
+	uri := fmt.Sprintf("/accounts/%s/rulesets", accountID)
 	res, err := api.makeRequestContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {
 		return []MagicFirewallRuleset{}, err
@@ -112,7 +110,7 @@ func (api *API) ListMagicFirewallRulesets(ctx context.Context) ([]MagicFirewallR
 
 	result := ListMagicFirewallRulesetResponse{}
 	if err := json.Unmarshal(res, &result); err != nil {
-		return []MagicFirewallRuleset{}, errors.Wrap(err, errUnmarshalError)
+		return []MagicFirewallRuleset{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 
 	return result.Result, nil
@@ -121,12 +119,10 @@ func (api *API) ListMagicFirewallRulesets(ctx context.Context) ([]MagicFirewallR
 // GetMagicFirewallRuleset returns a specific Magic Firewall Ruleset
 //
 // API reference: https://api.cloudflare.com/#rulesets-get-a-ruleset
-func (api *API) GetMagicFirewallRuleset(ctx context.Context, id string) (MagicFirewallRuleset, error) {
-	if err := api.checkAccountID(); err != nil {
-		return MagicFirewallRuleset{}, err
-	}
-
-	uri := fmt.Sprintf("/accounts/%s/rulesets/%s", api.AccountID, id)
+//
+// Deprecated: Use `GetZoneRuleset` or `GetAccountRuleset` instead.
+func (api *API) GetMagicFirewallRuleset(ctx context.Context, accountID, ID string) (MagicFirewallRuleset, error) {
+	uri := fmt.Sprintf("/accounts/%s/rulesets/%s", accountID, ID)
 	res, err := api.makeRequestContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {
 		return MagicFirewallRuleset{}, err
@@ -134,7 +130,7 @@ func (api *API) GetMagicFirewallRuleset(ctx context.Context, id string) (MagicFi
 
 	result := GetMagicFirewallRulesetResponse{}
 	if err := json.Unmarshal(res, &result); err != nil {
-		return MagicFirewallRuleset{}, errors.Wrap(err, errUnmarshalError)
+		return MagicFirewallRuleset{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 
 	return result.Result, nil
@@ -143,12 +139,10 @@ func (api *API) GetMagicFirewallRuleset(ctx context.Context, id string) (MagicFi
 // CreateMagicFirewallRuleset creates a Magic Firewall ruleset
 //
 // API reference: https://api.cloudflare.com/#rulesets-list-rulesets
-func (api *API) CreateMagicFirewallRuleset(ctx context.Context, name string, description string, rules []MagicFirewallRulesetRule) (MagicFirewallRuleset, error) {
-	if err := api.checkAccountID(); err != nil {
-		return MagicFirewallRuleset{}, err
-	}
-
-	uri := fmt.Sprintf("/accounts/%s/rulesets", api.AccountID)
+//
+// Deprecated: Use `CreateZoneRuleset` or `CreateAccountRuleset` instead.
+func (api *API) CreateMagicFirewallRuleset(ctx context.Context, accountID, name, description string, rules []MagicFirewallRulesetRule) (MagicFirewallRuleset, error) {
+	uri := fmt.Sprintf("/accounts/%s/rulesets", accountID)
 	res, err := api.makeRequestContext(ctx, http.MethodPost, uri,
 		CreateMagicFirewallRulesetRequest{
 			Name:        name,
@@ -162,7 +156,7 @@ func (api *API) CreateMagicFirewallRuleset(ctx context.Context, name string, des
 
 	result := CreateMagicFirewallRulesetResponse{}
 	if err := json.Unmarshal(res, &result); err != nil {
-		return MagicFirewallRuleset{}, errors.Wrap(err, errUnmarshalError)
+		return MagicFirewallRuleset{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 
 	return result.Result, nil
@@ -171,12 +165,10 @@ func (api *API) CreateMagicFirewallRuleset(ctx context.Context, name string, des
 // DeleteMagicFirewallRuleset deletes a Magic Firewall ruleset
 //
 // API reference: https://api.cloudflare.com/#rulesets-delete-ruleset
-func (api *API) DeleteMagicFirewallRuleset(ctx context.Context, id string) error {
-	if err := api.checkAccountID(); err != nil {
-		return err
-	}
-
-	uri := fmt.Sprintf("/accounts/%s/rulesets/%s", api.AccountID, id)
+//
+// Deprecated: Use `DeleteZoneRuleset` or `DeleteAccountRuleset` instead.
+func (api *API) DeleteMagicFirewallRuleset(ctx context.Context, accountID, ID string) error {
+	uri := fmt.Sprintf("/accounts/%s/rulesets/%s", accountID, ID)
 	res, err := api.makeRequestContext(ctx, http.MethodDelete, uri, nil)
 
 	if err != nil {
@@ -186,7 +178,7 @@ func (api *API) DeleteMagicFirewallRuleset(ctx context.Context, id string) error
 	// Firewall API is not implementing the standard response blob but returns an empty response (204) in case
 	// of a success. So we are checking for the response body size here
 	if len(res) > 0 {
-		return errors.Wrap(errors.New(string(res)), errMakeRequestError)
+		return fmt.Errorf(errMakeRequestError+": %w", errors.New(string(res)))
 	}
 
 	return nil
@@ -195,12 +187,10 @@ func (api *API) DeleteMagicFirewallRuleset(ctx context.Context, id string) error
 // UpdateMagicFirewallRuleset updates a Magic Firewall ruleset
 //
 // API reference: https://api.cloudflare.com/#rulesets-update-ruleset
-func (api *API) UpdateMagicFirewallRuleset(ctx context.Context, id string, description string, rules []MagicFirewallRulesetRule) (MagicFirewallRuleset, error) {
-	if err := api.checkAccountID(); err != nil {
-		return MagicFirewallRuleset{}, err
-	}
-
-	uri := fmt.Sprintf("/accounts/%s/rulesets/%s", api.AccountID, id)
+//
+// Deprecated: Use `UpdateZoneRuleset` or `UpdateAccountRuleset` instead.
+func (api *API) UpdateMagicFirewallRuleset(ctx context.Context, accountID, ID string, description string, rules []MagicFirewallRulesetRule) (MagicFirewallRuleset, error) {
+	uri := fmt.Sprintf("/accounts/%s/rulesets/%s", accountID, ID)
 	res, err := api.makeRequestContext(ctx, http.MethodPut, uri,
 		UpdateMagicFirewallRulesetRequest{Description: description, Rules: rules})
 	if err != nil {
@@ -209,16 +199,8 @@ func (api *API) UpdateMagicFirewallRuleset(ctx context.Context, id string, descr
 
 	result := UpdateMagicFirewallRulesetResponse{}
 	if err := json.Unmarshal(res, &result); err != nil {
-		return MagicFirewallRuleset{}, errors.Wrap(err, errUnmarshalError)
+		return MagicFirewallRuleset{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 
 	return result.Result, nil
-}
-
-func (api *API) checkAccountID() error {
-	if api.AccountID == "" {
-		return fmt.Errorf("account ID must not be empty")
-	}
-
-	return nil
 }

@@ -8,11 +8,9 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/url"
-	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
+	"errors"
 )
 
 // Image represents a Cloudflare Image.
@@ -136,7 +134,7 @@ func (api *API) UploadImage(ctx context.Context, accountID string, upload ImageU
 	w := multipart.NewWriter(body)
 	if err := upload.write(w); err != nil {
 		_ = w.Close()
-		return Image{}, errors.Wrap(err, "error writing multipart body")
+		return Image{}, fmt.Errorf("error writing multipart body: %w", err)
 	}
 	_ = w.Close()
 
@@ -158,7 +156,7 @@ func (api *API) UploadImage(ctx context.Context, accountID string, upload ImageU
 	var imageDetailsResponse ImageDetailsResponse
 	err = json.Unmarshal(res, &imageDetailsResponse)
 	if err != nil {
-		return Image{}, errors.Wrap(err, errUnmarshalError)
+		return Image{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return imageDetailsResponse.Result, nil
 }
@@ -177,7 +175,7 @@ func (api *API) UpdateImage(ctx context.Context, accountID string, id string, im
 	var imageDetailsResponse ImageDetailsResponse
 	err = json.Unmarshal(res, &imageDetailsResponse)
 	if err != nil {
-		return Image{}, errors.Wrap(err, errUnmarshalError)
+		return Image{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return imageDetailsResponse.Result, nil
 }
@@ -196,7 +194,7 @@ func (api *API) CreateImageDirectUploadURL(ctx context.Context, accountID string
 	var imageDirectUploadURLResponse ImageDirectUploadURLResponse
 	err = json.Unmarshal(res, &imageDirectUploadURLResponse)
 	if err != nil {
-		return ImageDirectUploadURL{}, errors.Wrap(err, errUnmarshalError)
+		return ImageDirectUploadURL{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return imageDirectUploadURLResponse.Result, nil
 }
@@ -205,18 +203,7 @@ func (api *API) CreateImageDirectUploadURL(ctx context.Context, accountID string
 //
 // API Reference: https://api.cloudflare.com/#cloudflare-images-list-images
 func (api *API) ListImages(ctx context.Context, accountID string, pageOpts PaginationOptions) ([]Image, error) {
-	v := url.Values{}
-	if pageOpts.PerPage > 0 {
-		v.Set("per_page", strconv.Itoa(pageOpts.PerPage))
-	}
-	if pageOpts.Page > 0 {
-		v.Set("page", strconv.Itoa(pageOpts.Page))
-	}
-
-	uri := fmt.Sprintf("/accounts/%s/images/v1", accountID)
-	if len(v) > 0 {
-		uri = fmt.Sprintf("%s?%s", uri, v.Encode())
-	}
+	uri := buildURI(fmt.Sprintf("/accounts/%s/images/v1", accountID), pageOpts)
 
 	res, err := api.makeRequestContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {
@@ -226,7 +213,7 @@ func (api *API) ListImages(ctx context.Context, accountID string, pageOpts Pagin
 	var imagesListResponse ImagesListResponse
 	err = json.Unmarshal(res, &imagesListResponse)
 	if err != nil {
-		return []Image{}, errors.Wrap(err, errUnmarshalError)
+		return []Image{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return imagesListResponse.Result.Images, nil
 }
@@ -245,7 +232,7 @@ func (api *API) ImageDetails(ctx context.Context, accountID string, id string) (
 	var imageDetailsResponse ImageDetailsResponse
 	err = json.Unmarshal(res, &imageDetailsResponse)
 	if err != nil {
-		return Image{}, errors.Wrap(err, errUnmarshalError)
+		return Image{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return imageDetailsResponse.Result, nil
 }
@@ -290,7 +277,7 @@ func (api *API) ImagesStats(ctx context.Context, accountID string) (ImagesStatsC
 	var imagesStatsResponse ImagesStatsResponse
 	err = json.Unmarshal(res, &imagesStatsResponse)
 	if err != nil {
-		return ImagesStatsCount{}, errors.Wrap(err, errUnmarshalError)
+		return ImagesStatsCount{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return imagesStatsResponse.Result.Count, nil
 }

@@ -5,10 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
-
-	"github.com/pkg/errors"
 )
 
 // RateLimit is a policy than can be applied to limit traffic within a customer domain.
@@ -98,7 +94,7 @@ func (api *API) CreateRateLimit(ctx context.Context, zoneID string, limit RateLi
 	}
 	var r rateLimitResponse
 	if err := json.Unmarshal(res, &r); err != nil {
-		return RateLimit{}, errors.Wrap(err, errUnmarshalError)
+		return RateLimit{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r.Result, nil
 }
@@ -107,18 +103,7 @@ func (api *API) CreateRateLimit(ctx context.Context, zoneID string, limit RateLi
 //
 // API reference: https://api.cloudflare.com/#rate-limits-for-a-zone-list-rate-limits
 func (api *API) ListRateLimits(ctx context.Context, zoneID string, pageOpts PaginationOptions) ([]RateLimit, ResultInfo, error) {
-	v := url.Values{}
-	if pageOpts.PerPage > 0 {
-		v.Set("per_page", strconv.Itoa(pageOpts.PerPage))
-	}
-	if pageOpts.Page > 0 {
-		v.Set("page", strconv.Itoa(pageOpts.Page))
-	}
-
-	uri := fmt.Sprintf("/zones/%s/rate_limits", zoneID)
-	if len(v) > 0 {
-		uri = fmt.Sprintf("%s?%s", uri, v.Encode())
-	}
+	uri := buildURI(fmt.Sprintf("/zones/%s/rate_limits", zoneID), pageOpts)
 
 	res, err := api.makeRequestContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {
@@ -128,7 +113,7 @@ func (api *API) ListRateLimits(ctx context.Context, zoneID string, pageOpts Pagi
 	var r rateLimitListResponse
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return []RateLimit{}, ResultInfo{}, errors.Wrap(err, errUnmarshalError)
+		return []RateLimit{}, ResultInfo{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r.Result, r.ResultInfo, nil
 }
@@ -174,7 +159,7 @@ func (api *API) RateLimit(ctx context.Context, zoneID, limitID string) (RateLimi
 	var r rateLimitResponse
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return RateLimit{}, errors.Wrap(err, errUnmarshalError)
+		return RateLimit{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r.Result, nil
 }
@@ -190,7 +175,7 @@ func (api *API) UpdateRateLimit(ctx context.Context, zoneID, limitID string, lim
 	}
 	var r rateLimitResponse
 	if err := json.Unmarshal(res, &r); err != nil {
-		return RateLimit{}, errors.Wrap(err, errUnmarshalError)
+		return RateLimit{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r.Result, nil
 }
@@ -207,7 +192,7 @@ func (api *API) DeleteRateLimit(ctx context.Context, zoneID, limitID string) err
 	var r rateLimitResponse
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return errors.Wrap(err, errUnmarshalError)
+		return fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return nil
 }

@@ -13,7 +13,7 @@ import (
 	"net/textproto"
 	"time"
 
-	"github.com/pkg/errors"
+	"errors"
 )
 
 // WorkerRequestParams provides parameters for worker requests for both enterprise and standard requests.
@@ -25,6 +25,10 @@ type WorkerRequestParams struct {
 // WorkerScriptParams provides a worker script and the associated bindings.
 type WorkerScriptParams struct {
 	Script string
+
+	// Module changes the Content-Type header to specify the script is an
+	// ES Module syntax script.
+	Module bool
 
 	// Bindings should be a map where the keys are the binding name, and the
 	// values are the binding content
@@ -89,6 +93,8 @@ func (b WorkerBindingType) String() string {
 }
 
 const (
+	// WorkerDurableObjectBindingType is the type for Durable Object bindings.
+	WorkerDurableObjectBindingType WorkerBindingType = "durable_object_namespace"
 	// WorkerInheritBindingType is the type for inherited bindings.
 	WorkerInheritBindingType WorkerBindingType = "inherit"
 	// WorkerKvNamespaceBindingType is the type for KV Namespace bindings.
@@ -99,6 +105,10 @@ const (
 	WorkerSecretTextBindingType WorkerBindingType = "secret_text"
 	// WorkerPlainTextBindingType is the type for plain text bindings.
 	WorkerPlainTextBindingType WorkerBindingType = "plain_text"
+	// WorkerServiceBindingType is the type for service bindings.
+	WorkerServiceBindingType WorkerBindingType = "service"
+	// WorkerR2BucketBindingType is the type for R2 bucket bindings.
+	WorkerR2BucketBindingType WorkerBindingType = "r2_bucket"
 )
 
 // WorkerBindingListItem a struct representing an individual binding in a list of bindings.
@@ -176,13 +186,39 @@ func (b WorkerKvNamespaceBinding) Type() WorkerBindingType {
 
 func (b WorkerKvNamespaceBinding) serialize(bindingName string) (workerBindingMeta, workerBindingBodyWriter, error) {
 	if b.NamespaceID == "" {
-		return nil, nil, errors.Errorf(`NamespaceID for binding "%s" cannot be empty`, bindingName)
+		return nil, nil, fmt.Errorf(`NamespaceID for binding "%s" cannot be empty`, bindingName)
 	}
 
 	return workerBindingMeta{
 		"name":         bindingName,
 		"type":         b.Type(),
 		"namespace_id": b.NamespaceID,
+	}, nil, nil
+}
+
+// WorkerDurableObjectBinding is a binding to a Workers Durable Object
+//
+// https://api.cloudflare.com/#durable-objects-namespace-properties
+type WorkerDurableObjectBinding struct {
+	ClassName  string
+	ScriptName string
+}
+
+// Type returns the type of the binding.
+func (b WorkerDurableObjectBinding) Type() WorkerBindingType {
+	return WorkerDurableObjectBindingType
+}
+
+func (b WorkerDurableObjectBinding) serialize(bindingName string) (workerBindingMeta, workerBindingBodyWriter, error) {
+	if b.ClassName == "" {
+		return nil, nil, fmt.Errorf(`ClassName for binding "%s" cannot be empty`, bindingName)
+	}
+
+	return workerBindingMeta{
+		"name":        bindingName,
+		"type":        b.Type(),
+		"class_name":  b.ClassName,
+		"script_name": b.ScriptName,
 	}, nil, nil
 }
 
@@ -234,7 +270,7 @@ func (b WorkerPlainTextBinding) Type() WorkerBindingType {
 
 func (b WorkerPlainTextBinding) serialize(bindingName string) (workerBindingMeta, workerBindingBodyWriter, error) {
 	if b.Text == "" {
-		return nil, nil, errors.Errorf(`Text for binding "%s" cannot be empty`, bindingName)
+		return nil, nil, fmt.Errorf(`Text for binding "%s" cannot be empty`, bindingName)
 	}
 
 	return workerBindingMeta{
@@ -258,13 +294,62 @@ func (b WorkerSecretTextBinding) Type() WorkerBindingType {
 
 func (b WorkerSecretTextBinding) serialize(bindingName string) (workerBindingMeta, workerBindingBodyWriter, error) {
 	if b.Text == "" {
-		return nil, nil, errors.Errorf(`Text for binding "%s" cannot be empty`, bindingName)
+		return nil, nil, fmt.Errorf(`Text for binding "%s" cannot be empty`, bindingName)
 	}
 
 	return workerBindingMeta{
 		"name": bindingName,
 		"type": b.Type(),
 		"text": b.Text,
+	}, nil, nil
+}
+
+type WorkerServiceBinding struct {
+	Service     string
+	Environment *string
+}
+
+func (b WorkerServiceBinding) Type() WorkerBindingType {
+	return WorkerServiceBindingType
+}
+
+func (b WorkerServiceBinding) serialize(bindingName string) (workerBindingMeta, workerBindingBodyWriter, error) {
+	if b.Service == "" {
+		return nil, nil, fmt.Errorf(`Service for binding "%s" cannot be empty`, bindingName)
+	}
+
+	meta := workerBindingMeta{
+		"name":    bindingName,
+		"type":    b.Type(),
+		"service": b.Service,
+	}
+
+	if b.Environment != nil {
+		meta["environment"] = *b.Environment
+	}
+
+	return meta, nil, nil
+}
+
+// WorkerR2BucketBinding is a binding to an R2 bucket.
+type WorkerR2BucketBinding struct {
+	BucketName string
+}
+
+// Type returns the type of the binding.
+func (b WorkerR2BucketBinding) Type() WorkerBindingType {
+	return WorkerR2BucketBindingType
+}
+
+func (b WorkerR2BucketBinding) serialize(bindingName string) (workerBindingMeta, workerBindingBodyWriter, error) {
+	if b.BucketName == "" {
+		return nil, nil, fmt.Errorf(`BucketName for binding "%s" cannot be empty`, bindingName)
+	}
+
+	return workerBindingMeta{
+		"name":        bindingName,
+		"type":        b.Type(),
+		"bucket_name": b.BucketName,
 	}, nil, nil
 }
 
@@ -292,7 +377,7 @@ func (api *API) DeleteWorker(ctx context.Context, requestParams *WorkerRequestPa
 	}
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return r, errors.Wrap(err, errUnmarshalError)
+		return r, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r, nil
 }
@@ -313,7 +398,7 @@ func (api *API) deleteWorkerWithName(ctx context.Context, scriptName string) (Wo
 	}
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return r, errors.Wrap(err, errUnmarshalError)
+		return r, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r, nil
 }
@@ -376,7 +461,7 @@ func (api *API) ListWorkerBindings(ctx context.Context, requestParams *WorkerReq
 	}
 	err = json.Unmarshal(res, &jsonRes)
 	if err != nil {
-		return r, errors.Wrap(err, errUnmarshalError)
+		return r, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 
 	r = WorkerBindingListResponse{
@@ -386,17 +471,24 @@ func (api *API) ListWorkerBindings(ctx context.Context, requestParams *WorkerReq
 	for _, jsonBinding := range jsonRes.Bindings {
 		name, ok := jsonBinding["name"].(string)
 		if !ok {
-			return r, errors.Errorf("Binding missing name %v", jsonBinding)
+			return r, fmt.Errorf("Binding missing name %v", jsonBinding)
 		}
 		bType, ok := jsonBinding["type"].(string)
 		if !ok {
-			return r, errors.Errorf("Binding missing type %v", jsonBinding)
+			return r, fmt.Errorf("Binding missing type %v", jsonBinding)
 		}
 		bindingListItem := WorkerBindingListItem{
 			Name: name,
 		}
 
 		switch WorkerBindingType(bType) {
+		case WorkerDurableObjectBindingType:
+			class_name := jsonBinding["class_name"].(string)
+			script_name := jsonBinding["script_name"].(string)
+			bindingListItem.Binding = WorkerDurableObjectBinding{
+				ClassName:  class_name,
+				ScriptName: script_name,
+			}
 		case WorkerKvNamespaceBindingType:
 			namespaceID := jsonBinding["namespace_id"].(string)
 			bindingListItem.Binding = WorkerKvNamespaceBinding{
@@ -415,8 +507,20 @@ func (api *API) ListWorkerBindings(ctx context.Context, requestParams *WorkerReq
 			bindingListItem.Binding = WorkerPlainTextBinding{
 				Text: text,
 			}
+		case WorkerServiceBindingType:
+			service := jsonBinding["service"].(string)
+			environment := jsonBinding["environment"].(string)
+			bindingListItem.Binding = WorkerServiceBinding{
+				Service:     service,
+				Environment: &environment,
+			}
 		case WorkerSecretTextBindingType:
 			bindingListItem.Binding = WorkerSecretTextBinding{}
+		case WorkerR2BucketBindingType:
+			bucketName := jsonBinding["bucket_name"].(string)
+			bindingListItem.Binding = WorkerR2BucketBinding{
+				BucketName: bucketName,
+			}
 		default:
 			bindingListItem.Binding = WorkerInheritBinding{}
 		}
@@ -484,7 +588,7 @@ func (api *API) ListWorkerScripts(ctx context.Context) (WorkerListResponse, erro
 	var r WorkerListResponse
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return WorkerListResponse{}, errors.Wrap(err, errUnmarshalError)
+		return WorkerListResponse{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r, nil
 }
@@ -492,11 +596,16 @@ func (api *API) ListWorkerScripts(ctx context.Context) (WorkerListResponse, erro
 // UploadWorker push raw script content for your worker.
 //
 // API reference: https://api.cloudflare.com/#worker-script-upload-worker
-func (api *API) UploadWorker(ctx context.Context, requestParams *WorkerRequestParams, data string) (WorkerScriptResponse, error) {
-	if requestParams.ScriptName != "" {
-		return api.uploadWorkerWithName(ctx, requestParams.ScriptName, "application/javascript", []byte(data))
+func (api *API) UploadWorker(ctx context.Context, requestParams *WorkerRequestParams, params *WorkerScriptParams) (WorkerScriptResponse, error) {
+	if params.Module {
+		return api.UploadWorkerWithBindings(ctx, requestParams, params)
 	}
-	return api.uploadWorkerForZone(ctx, requestParams.ZoneID, "application/javascript", []byte(data))
+
+	contentType := "application/javascript"
+	if requestParams.ScriptName != "" {
+		return api.uploadWorkerWithName(ctx, requestParams.ScriptName, contentType, []byte(params.Script))
+	}
+	return api.uploadWorkerForZone(ctx, requestParams.ZoneID, contentType, []byte(params.Script))
 }
 
 // UploadWorkerWithBindings push raw script content and bindings for your worker
@@ -524,7 +633,7 @@ func (api *API) uploadWorkerForZone(ctx context.Context, zoneID, contentType str
 	}
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return r, errors.Wrap(err, errUnmarshalError)
+		return r, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r, nil
 }
@@ -543,7 +652,7 @@ func (api *API) uploadWorkerWithName(ctx context.Context, scriptName, contentTyp
 	}
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return r, errors.Wrap(err, errUnmarshalError)
+		return r, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r, nil
 }
@@ -555,13 +664,21 @@ func formatMultipartBody(params *WorkerScriptParams) (string, []byte, error) {
 	defer mpw.Close()
 
 	// Write metadata part
-	scriptPartName := "script"
+	var scriptPartName string
 	meta := struct {
-		BodyPart string              `json:"body_part"`
-		Bindings []workerBindingMeta `json:"bindings"`
+		BodyPart   string              `json:"body_part,omitempty"`
+		MainModule string              `json:"main_module,omitempty"`
+		Bindings   []workerBindingMeta `json:"bindings"`
 	}{
-		BodyPart: scriptPartName,
 		Bindings: make([]workerBindingMeta, 0, len(params.Bindings)),
+	}
+
+	if params.Module {
+		scriptPartName = "worker.mjs"
+		meta.MainModule = scriptPartName
+	} else {
+		scriptPartName = "script"
+		meta.BodyPart = scriptPartName
 	}
 
 	bodyWriters := make([]workerBindingBodyWriter, 0, len(params.Bindings))
@@ -593,8 +710,16 @@ func formatMultipartBody(params *WorkerScriptParams) (string, []byte, error) {
 
 	// Write script part
 	hdr = textproto.MIMEHeader{}
-	hdr.Set("content-disposition", fmt.Sprintf(`form-data; name="%s"`, scriptPartName))
-	hdr.Set("content-type", "application/javascript")
+
+	contentType := "application/javascript"
+	if params.Module {
+		contentType = "application/javascript+module"
+		hdr.Set("content-disposition", fmt.Sprintf(`form-data; name="%s"; filename="%[1]s"`, scriptPartName))
+	} else {
+		hdr.Set("content-disposition", fmt.Sprintf(`form-data; name="%s"`, scriptPartName))
+	}
+	hdr.Set("content-type", contentType)
+
 	pw, err = mpw.CreatePart(hdr)
 	if err != nil {
 		return "", nil, err
@@ -636,7 +761,7 @@ func (api *API) CreateWorkerRoute(ctx context.Context, zoneID string, route Work
 	var r WorkerRouteResponse
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return WorkerRouteResponse{}, errors.Wrap(err, errUnmarshalError)
+		return WorkerRouteResponse{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r, nil
 }
@@ -653,7 +778,7 @@ func (api *API) DeleteWorkerRoute(ctx context.Context, zoneID string, routeID st
 	var r WorkerRouteResponse
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return WorkerRouteResponse{}, errors.Wrap(err, errUnmarshalError)
+		return WorkerRouteResponse{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r, nil
 }
@@ -683,7 +808,7 @@ func (api *API) ListWorkerRoutes(ctx context.Context, zoneID string) (WorkerRout
 	var r WorkerRoutesResponse
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return WorkerRoutesResponse{}, errors.Wrap(err, errUnmarshalError)
+		return WorkerRoutesResponse{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	for i := range r.Routes {
 		route := &r.Routes[i]
@@ -709,7 +834,7 @@ func (api *API) GetWorkerRoute(ctx context.Context, zoneID string, routeID strin
 	var r WorkerRouteResponse
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return WorkerRouteResponse{}, errors.Wrap(err, errUnmarshalError)
+		return WorkerRouteResponse{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r, nil
 }
@@ -730,7 +855,7 @@ func (api *API) UpdateWorkerRoute(ctx context.Context, zoneID string, routeID st
 	var r WorkerRouteResponse
 	err = json.Unmarshal(res, &r)
 	if err != nil {
-		return WorkerRouteResponse{}, errors.Wrap(err, errUnmarshalError)
+		return WorkerRouteResponse{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
 	}
 	return r, nil
 }
@@ -748,4 +873,44 @@ func getRouteEndpoint(route WorkerRoute) (string, error) {
 	}
 
 	return "routes", nil
+}
+
+type WorkerDomainParams struct {
+	ZoneID      string `json:"zone_id"`
+	Hostname    string `json:"hostname"`
+	Service     string `json:"service"`
+	Environment string `json:"environment,omitempty"`
+}
+
+type WorkerDomainResult struct {
+	ID          string `json:"id"`
+	ZoneID      string `json:"zone_id"`
+	ZoneName    string `json:"zone_name"`
+	Hostname    string `json:"hostname"`
+	Service     string `json:"service"`
+	Environment string `json:"environment"`
+}
+
+type WorkerDomainResponse struct {
+	Response
+	WorkerDomainResult `json:"result"`
+}
+
+// AttachWorkerToDomain attaches a worker to a zone and hostname
+//
+// API reference: https://api.cloudflare.com/#worker-domain-attach-to-domain
+func (api *API) AttachWorkerToDomain(ctx context.Context, rc *ResourceContainer, params *WorkerDomainParams) (WorkerDomainResponse, error) {
+	uri := fmt.Sprintf("/accounts/%s/workers/domains", rc.Identifier)
+	res, err := api.makeRequestContext(ctx, http.MethodPut, uri, params)
+	if err != nil {
+		return WorkerDomainResponse{}, err
+	}
+
+	var r WorkerDomainResponse
+	err = json.Unmarshal(res, &r)
+	if err != nil {
+		return WorkerDomainResponse{}, fmt.Errorf("%s: %w", errUnmarshalError, err)
+	}
+
+	return r, nil
 }

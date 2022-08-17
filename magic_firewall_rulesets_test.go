@@ -11,7 +11,7 @@ import (
 )
 
 func TestListMagicFirewallRulesets(t *testing.T) {
-	setup(UsingAccount("foo"))
+	setup()
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +35,7 @@ func TestListMagicFirewallRulesets(t *testing.T) {
 		}`)
 	}
 
-	mux.HandleFunc("/accounts/foo/rulesets", handler)
+	mux.HandleFunc("/accounts/"+testAccountID+"/rulesets", handler)
 
 	lastUpdated, _ := time.Parse(time.RFC3339, "2020-12-02T20:24:07.776073Z")
 
@@ -51,14 +51,14 @@ func TestListMagicFirewallRulesets(t *testing.T) {
 		},
 	}
 
-	actual, err := client.ListMagicFirewallRulesets(context.Background())
+	actual, err := client.ListMagicFirewallRulesets(context.Background(), testAccountID)
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
 }
 
 func TestGetMagicFirewallRuleset(t *testing.T) {
-	setup(UsingAccount("foo"))
+	setup()
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +95,7 @@ func TestGetMagicFirewallRuleset(t *testing.T) {
 		}`)
 	}
 
-	mux.HandleFunc("/accounts/foo/rulesets/2c0fc9fa937b11eaa1b71c4d701ab86e", handler)
+	mux.HandleFunc("/accounts/"+testAccountID+"/rulesets/2c0fc9fa937b11eaa1b71c4d701ab86e", handler)
 
 	lastUpdated, _ := time.Parse(time.RFC3339, "2020-12-02T20:24:07.776073Z")
 	rules := []MagicFirewallRulesetRule{{
@@ -123,14 +123,14 @@ func TestGetMagicFirewallRuleset(t *testing.T) {
 		Rules:       rules,
 	}
 
-	actual, err := client.GetMagicFirewallRuleset(context.Background(), "2c0fc9fa937b11eaa1b71c4d701ab86e")
+	actual, err := client.GetMagicFirewallRuleset(context.Background(), testAccountID, "2c0fc9fa937b11eaa1b71c4d701ab86e")
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
 }
 
 func TestCreateMagicFirewallRuleset(t *testing.T) {
-	setup(UsingAccount("foo"))
+	setup()
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -167,7 +167,7 @@ func TestCreateMagicFirewallRuleset(t *testing.T) {
 		}`)
 	}
 
-	mux.HandleFunc("/accounts/foo/rulesets", handler)
+	mux.HandleFunc("/accounts/"+testAccountID+"/rulesets", handler)
 
 	lastUpdated, _ := time.Parse(time.RFC3339, "2020-12-02T20:24:07.776073Z")
 	rules := []MagicFirewallRulesetRule{{
@@ -195,14 +195,14 @@ func TestCreateMagicFirewallRuleset(t *testing.T) {
 		Rules:       rules,
 	}
 
-	actual, err := client.CreateMagicFirewallRuleset(context.Background(), "ruleset1", "Test Firewall Ruleset", rules)
+	actual, err := client.CreateMagicFirewallRuleset(context.Background(), testAccountID, "ruleset1", "Test Firewall Ruleset", rules)
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
 }
 
 func TestUpdateMagicFirewallRuleset(t *testing.T) {
-	setup(UsingAccount("foo"))
+	setup()
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -252,7 +252,7 @@ func TestUpdateMagicFirewallRuleset(t *testing.T) {
 		}`)
 	}
 
-	mux.HandleFunc("/accounts/foo/rulesets/2c0fc9fa937b11eaa1b71c4d701ab86e", handler)
+	mux.HandleFunc("/accounts/"+testAccountID+"/rulesets/2c0fc9fa937b11eaa1b71c4d701ab86e", handler)
 
 	lastUpdated, _ := time.Parse(time.RFC3339, "2020-12-02T20:24:07.776073Z")
 	rules := []MagicFirewallRulesetRule{{
@@ -292,7 +292,7 @@ func TestUpdateMagicFirewallRuleset(t *testing.T) {
 		Rules:       rules,
 	}
 
-	actual, err := client.UpdateMagicFirewallRuleset(context.Background(), "2c0fc9fa937b11eaa1b71c4d701ab86e", "Test Firewall Ruleset Update", rules)
+	actual, err := client.UpdateMagicFirewallRuleset(context.Background(), testAccountID, "2c0fc9fa937b11eaa1b71c4d701ab86e", "Test Firewall Ruleset Update", rules)
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
@@ -302,7 +302,7 @@ func TestUpdateMagicFirewallRuleset(t *testing.T) {
 // of a success. So we are checking for the response body size here
 // TODO, This is going to be changed by MFW-63.
 func TestDeleteMagicFirewallRuleset(t *testing.T) {
-	setup(UsingAccount("foo"))
+	setup()
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -311,8 +311,8 @@ func TestDeleteMagicFirewallRuleset(t *testing.T) {
 		fmt.Fprint(w, ``)
 	}
 
-	mux.HandleFunc("/accounts/foo/rulesets/2c0fc9fa937b11eaa1b71c4d701ab86e", handler)
+	mux.HandleFunc("/accounts/"+testAccountID+"/rulesets/2c0fc9fa937b11eaa1b71c4d701ab86e", handler)
 
-	err := client.DeleteMagicFirewallRuleset(context.Background(), "2c0fc9fa937b11eaa1b71c4d701ab86e")
+	err := client.DeleteMagicFirewallRuleset(context.Background(), testAccountID, "2c0fc9fa937b11eaa1b71c4d701ab86e")
 	assert.NoError(t, err)
 }
