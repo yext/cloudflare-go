@@ -26,11 +26,17 @@ type TeamsRuleSettings struct {
 	// settings for l4(network) level overrides
 	L4Override *TeamsL4OverrideSettings `json:"l4override"`
 
+	// settings for adding headers to http requests
+	AddHeaders http.Header `json:"add_headers"`
+
 	// settings for browser isolation actions
 	BISOAdminControls *TeamsBISOAdminControlSettings `json:"biso_admin_controls"`
+
+	// settings for session check in allow action
+	CheckSession *TeamsCheckSessionSettings `json:"check_session"`
 }
 
-// TeamsL4OverrideSettings used in l4 filter type rule with action set to override
+// TeamsL4OverrideSettings used in l4 filter type rule with action set to override.
 type TeamsL4OverrideSettings struct {
 	IP   string `json:"ip,omitempty"`
 	Port int    `json:"port,omitempty"`
@@ -39,6 +45,14 @@ type TeamsL4OverrideSettings struct {
 type TeamsBISOAdminControlSettings struct {
 	DisablePrinting  bool `json:"dp"`
 	DisableCopyPaste bool `json:"dcp"`
+	DisableDownload  bool `json:"dd"`
+	DisableUpload    bool `json:"du"`
+	DisableKeyboard  bool `json:"dk"`
+}
+
+type TeamsCheckSessionSettings struct {
+	Enforce  bool     `json:"enforce"`
+	Duration Duration `json:"duration"`
 }
 
 type TeamsFilterType string
@@ -85,20 +99,21 @@ func TeamsRulesActionValues() []string {
 
 // TeamsRule represents an Teams wirefilter rule.
 type TeamsRule struct {
-	ID           string             `json:"id,omitempty"`
-	CreatedAt    *time.Time         `json:"created_at,omitempty"`
-	UpdatedAt    *time.Time         `json:"updated_at,omitempty"`
-	DeletedAt    *time.Time         `json:"deleted_at,omitempty"`
-	Name         string             `json:"name"`
-	Description  string             `json:"description"`
-	Precedence   uint64             `json:"precedence"`
-	Enabled      bool               `json:"enabled"`
-	Action       TeamsGatewayAction `json:"action"`
-	Filters      []TeamsFilterType  `json:"filters"`
-	Traffic      string             `json:"traffic"`
-	Identity     string             `json:"identity"`
-	Version      uint64             `json:"version"`
-	RuleSettings TeamsRuleSettings  `json:"rule_settings,omitempty"`
+	ID            string             `json:"id,omitempty"`
+	CreatedAt     *time.Time         `json:"created_at,omitempty"`
+	UpdatedAt     *time.Time         `json:"updated_at,omitempty"`
+	DeletedAt     *time.Time         `json:"deleted_at,omitempty"`
+	Name          string             `json:"name"`
+	Description   string             `json:"description"`
+	Precedence    uint64             `json:"precedence"`
+	Enabled       bool               `json:"enabled"`
+	Action        TeamsGatewayAction `json:"action"`
+	Filters       []TeamsFilterType  `json:"filters"`
+	Traffic       string             `json:"traffic"`
+	Identity      string             `json:"identity"`
+	DevicePosture string             `json:"device_posture"`
+	Version       uint64             `json:"version"`
+	RuleSettings  TeamsRuleSettings  `json:"rule_settings,omitempty"`
 }
 
 // TeamsRuleResponse is the API response, containing a single rule.

@@ -45,7 +45,11 @@ func TestTeamsRules(t *testing.T) {
 					"override_host": "",
 					"l4override": null,
 					"biso_admin_controls": null,
-					"add_headers": null
+					"add_headers": null,
+					"check_session": {
+						"enforce": true,
+						"duration": "15m0s"
+					}
 				  }
 				},
 				{
@@ -71,7 +75,8 @@ func TestTeamsRules(t *testing.T) {
 					"override_host": "",
 					"l4override": null,
 					"biso_admin_controls": null,
-					"add_headers": null
+					"add_headers": null,
+					"check_session": null
 				  }
 				}
 			]
@@ -83,46 +88,55 @@ func TestTeamsRules(t *testing.T) {
 	updatedAt, _ := time.Parse(time.RFC3339, "2014-01-01T05:20:00.12345Z")
 
 	want := []TeamsRule{{
-		ID:          "7559a944-3dd7-41bf-b183-360a814a8c36",
-		Name:        "rule1",
-		Description: "rule description",
-		Precedence:  1000,
-		Enabled:     false,
-		Action:      Isolate,
-		Filters:     []TeamsFilterType{HttpFilter},
-		Traffic:     `http.host == "example.com"`,
-		Identity:    "",
-		Version:     1,
+		ID:            "7559a944-3dd7-41bf-b183-360a814a8c36",
+		Name:          "rule1",
+		Description:   "rule description",
+		Precedence:    1000,
+		Enabled:       false,
+		Action:        Isolate,
+		Filters:       []TeamsFilterType{HttpFilter},
+		Traffic:       `http.host == "example.com"`,
+		DevicePosture: "",
+		Identity:      "",
+		Version:       1,
 		RuleSettings: TeamsRuleSettings{
 			BlockPageEnabled:  false,
 			BlockReason:       "",
 			OverrideIPs:       nil,
 			OverrideHost:      "",
 			L4Override:        nil,
+			AddHeaders:        nil,
 			BISOAdminControls: nil,
+			CheckSession: &TeamsCheckSessionSettings{
+				Enforce:  true,
+				Duration: Duration{900 * time.Second},
+			},
 		},
 		CreatedAt: &createdAt,
 		UpdatedAt: &updatedAt,
 		DeletedAt: nil,
 	},
 		{
-			ID:          "9ae57318-f32e-46b3-b889-48dd6dcc49af",
-			Name:        "rule2",
-			Description: "rule description 2",
-			Precedence:  2000,
-			Enabled:     true,
-			Action:      Block,
-			Filters:     []TeamsFilterType{HttpFilter},
-			Traffic:     `http.host == "abcd.com"`,
-			Identity:    "",
-			Version:     1,
+			ID:            "9ae57318-f32e-46b3-b889-48dd6dcc49af",
+			Name:          "rule2",
+			Description:   "rule description 2",
+			Precedence:    2000,
+			Enabled:       true,
+			Action:        Block,
+			Filters:       []TeamsFilterType{HttpFilter},
+			Traffic:       `http.host == "abcd.com"`,
+			Identity:      "",
+			DevicePosture: "",
+			Version:       1,
 			RuleSettings: TeamsRuleSettings{
 				BlockPageEnabled:  true,
 				BlockReason:       "",
 				OverrideIPs:       nil,
 				OverrideHost:      "",
 				L4Override:        nil,
+				AddHeaders:        nil,
 				BISOAdminControls: nil,
+				CheckSession:      nil,
 			},
 			CreatedAt: &createdAt,
 			UpdatedAt: &updatedAt,
@@ -172,7 +186,11 @@ func TestTeamsRule(t *testing.T) {
 					"override_host": "",
 					"l4override": null,
 					"biso_admin_controls": null,
-					"add_headers": null
+					"add_headers": null,
+					"check_session": {
+						"enforce": true,
+						"duration": "15m0s"
+					}
 				}
 			}
 		}
@@ -183,23 +201,29 @@ func TestTeamsRule(t *testing.T) {
 	updatedAt, _ := time.Parse(time.RFC3339, "2014-01-01T05:20:00.12345Z")
 
 	want := TeamsRule{
-		ID:          "7559a944-3dd7-41bf-b183-360a814a8c36",
-		Name:        "rule1",
-		Description: "rule description",
-		Precedence:  1000,
-		Enabled:     false,
-		Action:      Isolate,
-		Filters:     []TeamsFilterType{HttpFilter},
-		Traffic:     `http.host == "abcd.com"`,
-		Identity:    "",
-		Version:     1,
+		ID:            "7559a944-3dd7-41bf-b183-360a814a8c36",
+		Name:          "rule1",
+		Description:   "rule description",
+		Precedence:    1000,
+		Enabled:       false,
+		Action:        Isolate,
+		Filters:       []TeamsFilterType{HttpFilter},
+		Traffic:       `http.host == "abcd.com"`,
+		Identity:      "",
+		DevicePosture: "",
+		Version:       1,
 		RuleSettings: TeamsRuleSettings{
 			BlockPageEnabled:  false,
 			BlockReason:       "",
 			OverrideIPs:       nil,
 			OverrideHost:      "",
 			L4Override:        nil,
+			AddHeaders:        nil,
 			BISOAdminControls: nil,
+			CheckSession: &TeamsCheckSessionSettings{
+				Enforce:  true,
+				Duration: Duration{900 * time.Second},
+			},
 		},
 		CreatedAt: &createdAt,
 		UpdatedAt: &updatedAt,
@@ -244,7 +268,13 @@ func TestTeamsCreateRule(t *testing.T) {
 					"override_host": "",
 					"l4override": null,
 					"biso_admin_controls": null,
-					"add_headers": null
+					"add_headers": {
+						"X-Test": ["abcd"]
+					},
+					"check_session": {
+						"enforce": true,
+						"duration": "5m0s"
+					}
 				}
 			}
 		}
@@ -252,21 +282,27 @@ func TestTeamsCreateRule(t *testing.T) {
 	}
 
 	want := TeamsRule{
-		Name:        "rule1",
-		Description: "rule description",
-		Precedence:  1000,
-		Enabled:     false,
-		Action:      Isolate,
-		Filters:     []TeamsFilterType{HttpFilter},
-		Traffic:     `http.host == "abcd.com"`,
-		Identity:    "",
+		Name:          "rule1",
+		Description:   "rule description",
+		Precedence:    1000,
+		Enabled:       false,
+		Action:        Isolate,
+		Filters:       []TeamsFilterType{HttpFilter},
+		Traffic:       `http.host == "abcd.com"`,
+		Identity:      "",
+		DevicePosture: "",
 		RuleSettings: TeamsRuleSettings{
 			BlockPageEnabled:  false,
 			BlockReason:       "",
 			OverrideIPs:       nil,
 			OverrideHost:      "",
 			L4Override:        nil,
+			AddHeaders:        http.Header{"X-Test": []string{"abcd"}},
 			BISOAdminControls: nil,
+			CheckSession: &TeamsCheckSessionSettings{
+				Enforce:  true,
+				Duration: Duration{300 * time.Second},
+			},
 		},
 		DeletedAt: nil,
 	}
@@ -312,7 +348,8 @@ func TestTeamsUpdateRule(t *testing.T) {
 					"override_host": "",
 					"l4override": null,
 					"biso_admin_controls": null,
-					"add_headers": null
+					"add_headers": null,
+					"check_session": null
 				}
 			}
 		}
@@ -323,22 +360,25 @@ func TestTeamsUpdateRule(t *testing.T) {
 	updatedAt, _ := time.Parse(time.RFC3339, "2014-02-01T05:20:00.12345Z")
 
 	want := TeamsRule{
-		ID:          "7559a944-3dd7-41bf-b183-360a814a8c36",
-		Name:        "rule_name_change",
-		Description: "rule new description",
-		Precedence:  3000,
-		Enabled:     true,
-		Action:      Block,
-		Filters:     []TeamsFilterType{HttpFilter},
-		Traffic:     "",
-		Identity:    "",
+		ID:            "7559a944-3dd7-41bf-b183-360a814a8c36",
+		Name:          "rule_name_change",
+		Description:   "rule new description",
+		Precedence:    3000,
+		Enabled:       true,
+		Action:        Block,
+		Filters:       []TeamsFilterType{HttpFilter},
+		Traffic:       "",
+		Identity:      "",
+		DevicePosture: "",
 		RuleSettings: TeamsRuleSettings{
 			BlockPageEnabled:  false,
 			BlockReason:       "",
 			OverrideIPs:       nil,
 			OverrideHost:      "",
 			L4Override:        nil,
+			AddHeaders:        nil,
 			BISOAdminControls: nil,
+			CheckSession:      nil,
 		},
 		CreatedAt: &createdAt,
 		UpdatedAt: &updatedAt,
@@ -378,7 +418,8 @@ func TestTeamsPatchRule(t *testing.T) {
 					"override_host": "",
 					"l4override": null,
 					"biso_admin_controls": null,
-					"add_headers": null
+					"add_headers": null,
+					"check_session": null
 				}
 			}
 		}
@@ -397,7 +438,9 @@ func TestTeamsPatchRule(t *testing.T) {
 			OverrideIPs:       nil,
 			OverrideHost:      "",
 			L4Override:        nil,
+			AddHeaders:        nil,
 			BISOAdminControls: nil,
+			CheckSession:      nil,
 		},
 	}
 

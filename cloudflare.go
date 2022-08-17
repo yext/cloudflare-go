@@ -29,11 +29,11 @@ const (
 )
 
 const (
-	// AuthKeyEmail specifies that we should authenticate with API key and email address
+	// AuthKeyEmail specifies that we should authenticate with API key and email address.
 	AuthKeyEmail = 1 << iota
-	// AuthUserService specifies that we should authenticate with a User-Service key
+	// AuthUserService specifies that we should authenticate with a User-Service key.
 	AuthUserService
-	// AuthToken specifies that we should authenticate with an API Token
+	// AuthToken specifies that we should authenticate with an API Token.
 	AuthToken
 )
 
@@ -55,7 +55,7 @@ type API struct {
 	logger            Logger
 }
 
-// newClient provides shared logic for New and NewWithUserServiceKey
+// newClient provides shared logic for New and NewWithUserServiceKey.
 func newClient(opts ...Option) (*API, error) {
 	silentLogger := log.New(ioutil.Discard, "", log.LstdFlags)
 
@@ -103,7 +103,7 @@ func New(key, email string, opts ...Option) (*API, error) {
 	return api, nil
 }
 
-// NewWithAPIToken creates a new Cloudflare v4 API client using API Tokens
+// NewWithAPIToken creates a new Cloudflare v4 API client using API Tokens.
 func NewWithAPIToken(token string, opts ...Option) (*API, error) {
 	if token == "" {
 		return nil, errors.New(errEmptyAPIToken)
@@ -174,6 +174,8 @@ func (api *API) makeRequestContextWithHeaders(ctx context.Context, method, uri s
 	return api.makeRequestWithAuthTypeAndHeaders(ctx, method, uri, params, api.authType, headers)
 }
 
+// Deprecated: Use `makeRequestContextWithHeaders` instead.
+//nolint:unused
 func (api *API) makeRequestWithHeaders(method, uri string, params interface{}, headers http.Header) ([]byte, error) {
 	return api.makeRequestWithAuthTypeAndHeaders(context.Background(), method, uri, params, api.authType, headers)
 }
@@ -183,31 +185,28 @@ func (api *API) makeRequestWithAuthType(ctx context.Context, method, uri string,
 }
 
 func (api *API) makeRequestWithAuthTypeAndHeaders(ctx context.Context, method, uri string, params interface{}, authType int, headers http.Header) ([]byte, error) {
-	// Replace nil with a JSON object if needed
-	var jsonBody []byte
+	var reqBody io.Reader
 	var err error
 
 	if params != nil {
-		if paramBytes, ok := params.([]byte); ok {
-			jsonBody = paramBytes
+		if r, ok := params.(io.Reader); ok {
+			reqBody = r
+		} else if paramBytes, ok := params.([]byte); ok {
+			reqBody = bytes.NewReader(paramBytes)
 		} else {
+			var jsonBody []byte
 			jsonBody, err = json.Marshal(params)
 			if err != nil {
 				return nil, errors.Wrap(err, "error marshalling params to JSON")
 			}
+			reqBody = bytes.NewReader(jsonBody)
 		}
-	} else {
-		jsonBody = nil
 	}
 
 	var resp *http.Response
 	var respErr error
-	var reqBody io.Reader
 	var respBody []byte
 	for i := 0; i <= api.retryPolicy.MaxRetries; i++ {
-		if jsonBody != nil {
-			reqBody = bytes.NewReader(jsonBody)
-		}
 		if i > 0 {
 			// expect the backoff introduced here on errored requests to dominate the effect of rate limiting
 			// don't need a random component here as the rate limiter should do something similar
@@ -225,12 +224,13 @@ func (api *API) makeRequestWithAuthTypeAndHeaders(ctx context.Context, method, u
 			case <-ctx.Done():
 				return nil, errors.Wrap(ctx.Err(), "operation aborted during backoff")
 			}
-
 		}
-		err = api.rateLimiter.Wait(context.Background())
+
+		err = api.rateLimiter.Wait(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "Error caused by request rate limiting")
 		}
+
 		resp, respErr = api.request(ctx, method, uri, reqBody, authType, headers)
 
 		// retry if the server is rate limiting us or if it failed
@@ -397,7 +397,7 @@ type ResultInfo struct {
 	Cursors    ResultInfoCursors `json:"cursors"`
 }
 
-// RawResponse keeps the result as JSON form
+// RawResponse keeps the result as JSON form.
 type RawResponse struct {
 	Response
 	Result json.RawMessage `json:"result"`
@@ -419,14 +419,14 @@ func (api *API) Raw(method, endpoint string, data interface{}) (json.RawMessage,
 }
 
 // PaginationOptions can be passed to a list request to configure paging
-// These values will be defaulted if omitted, and PerPage has min/max limits set by resource
+// These values will be defaulted if omitted, and PerPage has min/max limits set by resource.
 type PaginationOptions struct {
 	Page    int `json:"page,omitempty"`
 	PerPage int `json:"per_page,omitempty"`
 }
 
 // RetryPolicy specifies number of retries and min/max retry delays
-// This config is used when the client exponentially backs off after errored requests
+// This config is used when the client exponentially backs off after errored requests.
 type RetryPolicy struct {
 	MaxRetries    int
 	MinRetryDelay time.Duration
@@ -434,13 +434,14 @@ type RetryPolicy struct {
 }
 
 // Logger defines the interface this library needs to use logging
-// This is a subset of the methods implemented in the log package
+// This is a subset of the methods implemented in the log package.
 type Logger interface {
 	Printf(format string, v ...interface{})
 }
 
-// ReqOption is a functional option for configuring API requests
+// ReqOption is a functional option for configuring API requests.
 type ReqOption func(opt *reqOption)
+
 type reqOption struct {
 	params url.Values
 }
