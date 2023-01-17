@@ -86,8 +86,8 @@ type CertificatePacksAdvancedDetailResponse struct {
 // ListCertificatePacks returns all available TLS certificate packs for a zone.
 //
 // API Reference: https://api.cloudflare.com/#certificate-packs-list-certificate-packs
-func (api *API) ListCertificatePacks(ctx context.Context, zoneID string) ([]CertificatePack, error) {
-	uri := fmt.Sprintf("/zones/%s/ssl/certificate_packs?status=all", zoneID)
+func (api *API) ListCertificatePacks(ctx context.Context, zoneID string, page int) ([]CertificatePack, error) {
+	uri := fmt.Sprintf("/zones/%s/ssl/certificate_packs?status=all&per_page=50&page=%d", zoneID, page)
 	res, err := api.makeRequestContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {
 		return []CertificatePack{}, err

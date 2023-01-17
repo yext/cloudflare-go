@@ -43,7 +43,7 @@ func TestListCertificatePacks(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method, "Expected method 'GET', got %s", r.Method)
 		w.Header().Set("content-type", "application/json")
-		fmt.Fprintf(w, `{
+		fmt.Fprintf(w, `{ListCertificatePacks(
   "success": true,
   "errors": [],
   "messages": [],
@@ -86,7 +86,7 @@ func TestListCertificatePacks(t *testing.T) {
 	mux.HandleFunc("/zones/023e105f4ecef8ad9ca31a8372d0c353/ssl/certificate_packs", handler)
 
 	want := []CertificatePack{desiredCertificatePack}
-	actual, err := client.ListCertificatePacks(context.Background(), "023e105f4ecef8ad9ca31a8372d0c353")
+	actual, err := client.ListCertificatePacks(context.Background(), "023e105f4ecef8ad9ca31a8372d0c353", 1)
 
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
