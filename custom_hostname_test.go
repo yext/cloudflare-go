@@ -940,3 +940,70 @@ func TestCustomHostname_CreateCustomHostnameCustomCertificateAuthority(t *testin
 		assert.Equal(t, want, response)
 	}
 }
+
+func TestCustomHostname_CreateCustomHostnameCustomCsrCertificate(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/zones/foo/custom_hostnames", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method, "Expected method 'POST', got %s", r.Method)
+
+		w.Header().Set("content-type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprintf(w, `
+{
+  "result": {
+    "id": "614b3124-cd57-42f0-8307-000000000000",
+    "hostname": "app.example.com",
+    "ssl": {
+		"id": "0d89c70d-ad9f-4843-b99f-6cc0252067e9",
+		"status": "initializing",
+		"custom_csr_id": "12345678-1234-1234-1234-000000000000",
+		"custom_certificate": "test-cert",
+		"settings": {
+			"min_tls_version": "1.2"
+		}
+	},
+    "created_at": "2020-06-30T21:37:36.563495Z"
+  },
+  "success": true,
+  "errors": [],
+  "messages": []
+}`)
+	})
+
+	response, err := client.CreateCustomHostname(
+		context.Background(),
+		"foo",
+		CustomHostname{Hostname: "app.example.com",
+			SSL: &CustomHostnameSSL{
+				CustomCsrID:       "12345678-1234-1234-1234-000000000000",
+				CustomCertificate: "test-cert",
+			},
+		},
+	)
+
+	createdAt, _ := time.Parse(time.RFC3339, "2020-06-30T21:37:36.563495Z")
+
+	want := &CustomHostnameResponse{
+		Result: CustomHostname{
+			ID:       "614b3124-cd57-42f0-8307-000000000000",
+			Hostname: "app.example.com",
+			SSL: &CustomHostnameSSL{
+				ID:                "0d89c70d-ad9f-4843-b99f-6cc0252067e9",
+				CustomCsrID:       "12345678-1234-1234-1234-000000000000",
+				CustomCertificate: "test-cert",
+				Settings: CustomHostnameSSLSettings{
+					MinTLSVersion: "1.2",
+				},
+				Status: "initializing",
+			},
+			CreatedAt: &createdAt,
+		},
+		Response: Response{Success: true, Errors: []ResponseInfo{}, Messages: []ResponseInfo{}},
+	}
+
+	if assert.NoError(t, err) {
+		assert.Equal(t, want, response)
+	}
+}

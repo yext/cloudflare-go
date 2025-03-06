@@ -36,14 +36,14 @@ type CustomHostnameSSLSettings struct {
 	EarlyHints    string   `json:"early_hints,omitempty"`
 }
 
-//CustomHostnameOwnershipVerification represents ownership verification status of a given custom hostname.
+// CustomHostnameOwnershipVerification represents ownership verification status of a given custom hostname.
 type CustomHostnameOwnershipVerification struct {
 	Type  string `json:"type,omitempty"`
 	Name  string `json:"name,omitempty"`
 	Value string `json:"value,omitempty"`
 }
 
-//SSLValidationError represents errors that occurred during SSL validation.
+// SSLValidationError represents errors that occurred during SSL validation.
 type SSLValidationError struct {
 	Message string `json:"message,omitempty"`
 }
@@ -67,6 +67,7 @@ type CustomHostnameSSL struct {
 	Type                 string                          `json:"type,omitempty"`
 	Wildcard             *bool                           `json:"wildcard,omitempty"`
 	CustomCertificate    string                          `json:"custom_certificate,omitempty"`
+	CustomCsrID          string                          `json:"custom_csr_id,omitempty"`
 	CustomKey            string                          `json:"custom_key,omitempty"`
 	CertificateAuthority string                          `json:"certificate_authority,omitempty"`
 	Issuer               string                          `json:"issuer,omitempty"`

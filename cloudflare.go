@@ -24,8 +24,8 @@ import (
 const apiURL = "https://api.cloudflare.com/client/v4"
 
 const (
-	originCARootCertEccURL = "https://developers.cloudflare.com/ssl/0d2cd0f374da0fb6dbf53128b60bbbf7/origin_ca_ecc_root.pem"
-	originCARootCertRsaURL = "https://developers.cloudflare.com/ssl/e2b9968022bf23b071d95229b5678452/origin_ca_rsa_root.pem"
+	originCARootCertEccURL = "https://developers.cloudflare.com/ssl/static/origin_ca_ecc_root.pem"
+	originCARootCertRsaURL = "https://developers.cloudflare.com/ssl/static/origin_ca_rsa_root.pem"
 )
 
 const (
@@ -175,6 +175,7 @@ func (api *API) makeRequestContextWithHeaders(ctx context.Context, method, uri s
 }
 
 // Deprecated: Use `makeRequestContextWithHeaders` instead.
+//
 //nolint:unused
 func (api *API) makeRequestWithHeaders(method, uri string, params interface{}, headers http.Header) ([]byte, error) {
 	return api.makeRequestWithAuthTypeAndHeaders(context.Background(), method, uri, params, api.authType, headers)
