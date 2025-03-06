@@ -43,7 +43,7 @@ func TestListCertificatePacks(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method, "Expected method 'GET', got %s", r.Method)
 		w.Header().Set("content-type", "application/json")
-		fmt.Fprintf(w, `{ListCertificatePacks(
+		fmt.Fprintf(w, `{
   "success": true,
   "errors": [],
   "messages": [],
