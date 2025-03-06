@@ -1,23 +1,35 @@
 # flarectl
 
-A CLI application for interacting with a Cloudflare account. Powered by [cloudflare-go].
+A CLI application for interacting with a Cloudflare account. Powered by [cloudflare-go](https://github.com/cloudflare/cloudflare-go).
 
 ## Installation 
 
 Install it when you install our command-line library:
 
 ```sh
-go get -u github.com/cloudflare/cloudflare-go/...
+go install github.com/cloudflare/cloudflare-go/cmd/flarectl@latest
 ```
 
 # Usage
 
-You must set your API key and account email address in the environment variables `CF_API_KEY` and `CF_API_EMAIL`.
+You must authenticate with Cloudflare using either an API Token or API Key.
+
+To use an API Token, set the `CF_API_TOKEN` environment variable:
+
+```
+$ export CF_API_TOKEN=Abc123Xyz
+```
+
+To use an API Key, set the `CF_API_KEY` and `CF_API_EMAIL` environment variables:
 
 ```
 $ export CF_API_KEY=abcdef1234567890
 $ export CF_API_EMAIL=someone@example.com
+```
 
+Once authenticated, you can run flarectl commands:
+
+```
 $ flarectl:
 
    flarectl - Cloudflare CLI
@@ -29,15 +41,16 @@ VERSION:
    2017.10.0
    
 COMMANDS:
-   ips, i		Print Cloudflare IP ranges
-   user, u		User information
-   zone, z		Zone information
-   dns, d		DNS records
-   user-agents, ua	User-Agent blocking
-   pagerules, p		Page Rules
-   railgun, r		Railgun information
-   firewall, f		Firewall
-   help, h		Shows a list of commands or help for one command
+   ips, i                     Print Cloudflare IP ranges
+   user, u                    User information
+   zone, z                    Zone information
+   dns, d                     DNS records
+   user-agents, ua            User-Agent blocking
+   pagerules, p               Page Rules
+   railgun, r                 Railgun information
+   firewall, f                Firewall
+   origin-ca-root-cert, ocrc  Print Origin CA Root Certificate (in PEM format)
+   help, h                    Shows a list of commands or help for one command
    
 GLOBAL OPTIONS:
    --help, -h		show help

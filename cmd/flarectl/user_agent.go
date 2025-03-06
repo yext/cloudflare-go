@@ -1,12 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/cloudflare/cloudflare-go"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func formatUserAgentRule(rule cloudflare.UserAgentRule) []string {
@@ -19,21 +20,16 @@ func formatUserAgentRule(rule cloudflare.UserAgentRule) []string {
 	}
 }
 
-func userAgentCreate(c *cli.Context) {
-	if err := checkEnv(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return
-	}
-
+func userAgentCreate(c *cli.Context) error {
 	if err := checkFlags(c, "zone", "mode", "value"); err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 
 	zoneID, err := api.ZoneIDByName(c.String("zone"))
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 
 	userAgentRule := cloudflare.UserAgentRule{
@@ -46,33 +42,30 @@ func userAgentCreate(c *cli.Context) {
 		},
 	}
 
-	resp, err := api.CreateUserAgentRule(zoneID, userAgentRule)
+	resp, err := api.CreateUserAgentRule(context.Background(), zoneID, userAgentRule)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error creating User-Agent block rule: ", err)
-		return
+		return err
 	}
 
 	output := [][]string{
 		formatUserAgentRule(resp.Result),
 	}
 
-	writeTable(output, "ID", "Description", "Mode", "Value", "Paused")
+	writeTable(c, output, "ID", "Description", "Mode", "Value", "Paused")
+
+	return nil
 }
 
-func userAgentUpdate(c *cli.Context) {
-	if err := checkEnv(); err != nil {
-		fmt.Println(err)
-		return
-	}
-
+func userAgentUpdate(c *cli.Context) error {
 	if err := checkFlags(c, "zone", "id", "mode", "value"); err != nil {
-		return
+		return err
 	}
 
 	zoneID, err := api.ZoneIDByName(c.String("zone"))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return
+		return err
 	}
 
 	userAgentRule := cloudflare.UserAgentRule{
@@ -85,68 +78,62 @@ func userAgentUpdate(c *cli.Context) {
 		},
 	}
 
-	resp, err := api.UpdateUserAgentRule(zoneID, c.String("id"), userAgentRule)
+	resp, err := api.UpdateUserAgentRule(context.Background(), zoneID, c.String("id"), userAgentRule)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error updating User-Agent block rule: ", err)
-		return
+		return err
 	}
 
 	output := [][]string{
 		formatUserAgentRule(resp.Result),
 	}
 
-	writeTable(output, "ID", "Description", "Mode", "Value", "Paused")
+	writeTable(c, output, "ID", "Description", "Mode", "Value", "Paused")
+
+	return nil
 }
 
-func userAgentDelete(c *cli.Context) {
-	if err := checkEnv(); err != nil {
-		fmt.Println(err)
-		return
-	}
-
+func userAgentDelete(c *cli.Context) error {
 	if err := checkFlags(c, "zone", "id"); err != nil {
-		return
+		return err
 	}
 
 	zoneID, err := api.ZoneIDByName(c.String("zone"))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return
+		return err
 	}
 
-	resp, err := api.DeleteUserAgentRule(zoneID, c.String("id"))
+	resp, err := api.DeleteUserAgentRule(context.Background(), zoneID, c.String("id"))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error deleting User-Agent block rule: ", err)
-		return
+		return err
 	}
 
 	output := [][]string{
 		formatUserAgentRule(resp.Result),
 	}
 
-	writeTable(output, "ID", "Description", "Mode", "Value", "Paused")
+	writeTable(c, output, "ID", "Description", "Mode", "Value", "Paused")
+
+	return nil
 }
 
-func userAgentList(c *cli.Context) {
-	if err := checkEnv(); err != nil {
-		fmt.Println(err)
-		return
-	}
-
+func userAgentList(c *cli.Context) error {
 	if err := checkFlags(c, "zone", "page"); err != nil {
-		return
+		return err
 	}
 
 	zoneID, err := api.ZoneIDByName(c.String("zone"))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return
+		return err
 	}
 
-	resp, err := api.ListUserAgentRules(zoneID, c.Int("page"))
+	resp, err := api.ListUserAgentRules(context.Background(), zoneID, c.Int("page"))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error listing User-Agent block rules: ", err)
-		return
+		return err
 	}
 
 	output := make([][]string, 0, len(resp.Result))
@@ -154,5 +141,7 @@ func userAgentList(c *cli.Context) {
 		output = append(output, formatUserAgentRule(rule))
 	}
 
-	writeTable(output, "ID", "Description", "Mode", "Value", "Paused")
+	writeTable(c, output, "ID", "Description", "Mode", "Value", "Paused")
+
+	return nil
 }

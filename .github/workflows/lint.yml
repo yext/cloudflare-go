@@ -1,0 +1,26 @@
+name: Lint
+on: [push, pull_request]
+jobs:
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: latest
+          args: "--config .golintci.yaml"
+          only-new-issues: true # only show new issues in the PR, not all.
+  structslop:
+    name: structslop
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ^1.16
+      - name: structslop
+        run: |
+          go generate -tags tools tools/tools.go
+          $(go env GOPATH)/bin/structslop .

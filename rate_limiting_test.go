@@ -1,6 +1,7 @@
 package cloudflare
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -11,7 +12,6 @@ import (
 
 const (
 	rateLimitID                = "72dae2fc158942f2adb1dd2a3d4143bc"
-	testZoneID                 = "abcd123"
 	serverRateLimitDescription = `{
 	"id": "72dae2fc158942f2adb1dd2a3d4143bc",
 	"disabled": false,
@@ -65,31 +65,7 @@ var expectedRateLimitStruct = RateLimit{
 		Mode:    "ban",
 		Timeout: 60,
 	},
-	Correlate: RateLimitCorrelate{
-		By: "nat",
-	},
-}
-var expectedRateLimitStructUpdated = RateLimit{
-	ID:          "72dae2fc158942f2adb1dd2a3d4143bc",
-	Disabled:    false,
-	Description: "test",
-	Match: RateLimitTrafficMatcher{
-		Request: RateLimitRequestMatcher{
-			Methods:    []string{"_ALL_"},
-			Schemes:    []string{"_ALL_"},
-			URLPattern: "exampledomain.com/test-rate-limit",
-		},
-		Response: RateLimitResponseMatcher{
-			OriginTraffic: &expectedOriginTraffic,
-		},
-	},
-	Threshold: 50,
-	Period:    1,
-	Action: RateLimitAction{
-		Mode:    "ban",
-		Timeout: 60,
-	},
-	Correlate: RateLimitCorrelate{
+	Correlate: &RateLimitCorrelate{
 		By: "nat",
 	},
 }
@@ -99,7 +75,7 @@ func TestListRateLimits(t *testing.T) {
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Method, "GET", "Expected method 'GET', got %s", r.Method)
+		assert.Equal(t, http.MethodGet, r.Method, "Expected method 'GET', got %s", r.Method)
 		w.Header().Set("content-type", "application/json")
 		fmt.Fprintf(w, `{
 		  "result": [
@@ -121,7 +97,7 @@ func TestListRateLimits(t *testing.T) {
 	mux.HandleFunc("/zones/"+testZoneID+"/rate_limits", handler)
 	want := []RateLimit{expectedRateLimitStruct}
 
-	actual, _, err := client.ListRateLimits(testZoneID, PaginationOptions{})
+	actual, _, err := client.ListRateLimits(context.Background(), testZoneID, PaginationOptions{})
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
@@ -132,7 +108,7 @@ func TestListRateLimitsWithPageOpts(t *testing.T) {
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Method, "GET", "Expected method 'GET', got %s", r.Method)
+		assert.Equal(t, http.MethodGet, r.Method, "Expected method 'GET', got %s", r.Method)
 		w.Header().Set("content-type", "application/json")
 		fmt.Fprintf(w, `{
 		  "result": [
@@ -157,7 +133,7 @@ func TestListRateLimitsWithPageOpts(t *testing.T) {
 	pageOpts := PaginationOptions{
 		PerPage: 50,
 	}
-	actual, _, err := client.ListRateLimits(testZoneID, pageOpts)
+	actual, _, err := client.ListRateLimits(context.Background(), testZoneID, pageOpts)
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
@@ -169,7 +145,7 @@ func TestListAllRateLimitsDoesPagination(t *testing.T) {
 
 	oneHundredRateLimitRecords := strings.Repeat(serverRateLimitDescription+",", 99) + serverRateLimitDescription
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Method, "GET", "Expected method 'GET', got %s", r.Method)
+		assert.Equal(t, http.MethodGet, r.Method, "Expected method 'GET', got %s", r.Method)
 		w.Header().Set("content-type", "application/json")
 		if r.URL.Query().Get("page") == "1" {
 			fmt.Fprintf(w, `{
@@ -204,7 +180,6 @@ func TestListAllRateLimitsDoesPagination(t *testing.T) {
 		}
 		`, serverRateLimitDescription)
 		}
-
 	}
 
 	mux.HandleFunc("/zones/"+testZoneID+"/rate_limits", handler)
@@ -213,7 +188,7 @@ func TestListAllRateLimitsDoesPagination(t *testing.T) {
 		want[i] = expectedRateLimitStruct
 	}
 
-	actual, err := client.ListAllRateLimits(testZoneID)
+	actual, err := client.ListAllRateLimits(context.Background(), testZoneID)
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
@@ -224,7 +199,7 @@ func TestGetRateLimit(t *testing.T) {
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Method, "GET", "Expected method 'GET', got %s", r.Method)
+		assert.Equal(t, http.MethodGet, r.Method, "Expected method 'GET', got %s", r.Method)
 		w.Header().Set("content-type", "application/json")
 		fmt.Fprintf(w, `{
 		  "result": %s,
@@ -238,7 +213,7 @@ func TestGetRateLimit(t *testing.T) {
 	mux.HandleFunc("/zones/"+testZoneID+"/rate_limits/"+rateLimitID, handler)
 	want := expectedRateLimitStruct
 
-	actual, err := client.RateLimit(testZoneID, rateLimitID)
+	actual, err := client.RateLimit(context.Background(), testZoneID, rateLimitID)
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
@@ -260,13 +235,13 @@ func TestCreateRateLimit(t *testing.T) {
 			Mode:    "ban",
 			Timeout: 60,
 		},
-		Correlate: RateLimitCorrelate{
+		Correlate: &RateLimitCorrelate{
 			By: "nat",
 		},
 	}
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Method, "POST", "Expected method 'POST', got %s", r.Method)
+		assert.Equal(t, http.MethodPost, r.Method, "Expected method 'POST', got %s", r.Method)
 		w.Header().Set("content-type", "application/json")
 		fmt.Fprintf(w, `{
 		  "result": %s,
@@ -280,7 +255,7 @@ func TestCreateRateLimit(t *testing.T) {
 	mux.HandleFunc("/zones/"+testZoneID+"/rate_limits", handler)
 	want := expectedRateLimitStruct
 
-	actual, err := client.CreateRateLimit(testZoneID, newRateLimit)
+	actual, err := client.CreateRateLimit(context.Background(), testZoneID, newRateLimit)
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
@@ -305,7 +280,7 @@ func TestCreateRateLimitWithZeroedThreshold(t *testing.T) {
 	}
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Method, "POST", "Expected method 'POST', got %s", r.Method)
+		assert.Equal(t, http.MethodPost, r.Method, "Expected method 'POST', got %s", r.Method)
 		w.WriteHeader(400)
 		w.Header().Set("content-type", "application/json")
 		fmt.Fprint(w, `{
@@ -319,7 +294,7 @@ func TestCreateRateLimitWithZeroedThreshold(t *testing.T) {
 
 	mux.HandleFunc("/zones/"+testZoneID+"/rate_limits", handler)
 
-	actual, err := client.CreateRateLimit(testZoneID, newRateLimit)
+	actual, err := client.CreateRateLimit(context.Background(), testZoneID, newRateLimit)
 	assert.Error(t, err)
 	assert.Equal(t, RateLimit{}, actual)
 }
@@ -343,7 +318,7 @@ func TestUpdateRateLimit(t *testing.T) {
 	}
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Method, "PUT", "Expected method 'PUT', got %s", r.Method)
+		assert.Equal(t, http.MethodPut, r.Method, "Expected method 'PUT', got %s", r.Method)
 		w.Header().Set("content-type", "application/json")
 		fmt.Fprintf(w, `{
 		  "result": %s,
@@ -357,7 +332,7 @@ func TestUpdateRateLimit(t *testing.T) {
 	mux.HandleFunc("/zones/"+testZoneID+"/rate_limits/"+rateLimitID, handler)
 	want := expectedRateLimitStruct
 
-	actual, err := client.UpdateRateLimit(testZoneID, rateLimitID, newRateLimit)
+	actual, err := client.UpdateRateLimit(context.Background(), testZoneID, rateLimitID, newRateLimit)
 	if assert.NoError(t, err) {
 		assert.Equal(t, want, actual)
 	}
@@ -368,7 +343,7 @@ func TestDeleteRateLimit(t *testing.T) {
 	defer teardown()
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, r.Method, "DELETE", "Expected method 'DELETE', got %s", r.Method)
+		assert.Equal(t, http.MethodDelete, r.Method, "Expected method 'DELETE', got %s", r.Method)
 		w.Header().Set("content-type", "application/json")
 		fmt.Fprint(w, `{
 		  "result": null,
@@ -381,6 +356,6 @@ func TestDeleteRateLimit(t *testing.T) {
 
 	mux.HandleFunc("/zones/"+testZoneID+"/rate_limits/"+rateLimitID, handler)
 
-	err := client.DeleteRateLimit(testZoneID, rateLimitID)
+	err := client.DeleteRateLimit(context.Background(), testZoneID, rateLimitID)
 	assert.NoError(t, err)
 }
